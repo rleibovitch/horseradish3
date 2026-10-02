@@ -7,6 +7,10 @@
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const card = document.querySelector(".agent.horseradish");
     const size = card ? 168 : 140;
+    const inset = 22;
+    const boxes = Array.prototype.slice.call(
+        document.querySelectorAll(".stamp, .navbar, .stamp-btn, .footer")
+    );
     let x = 0;
     let y = 0;
     let vx = 0;
@@ -18,6 +22,7 @@
     let lastT = performance.now();
     let squash = 1;
     const trail = [];
+    const ignore = [];
 
     function floorY() {
         return window.innerHeight - size - 8;
@@ -46,6 +51,123 @@
 
     function point(event) {
         return { x: event.clientX, y: event.clientY };
+    }
+
+    function bounceWalls() {
+        const maxX = Math.max(0, window.innerWidth - size);
+        const maxY = floorY();
+
+        if (x < 0) {
+            x = 0;
+            vx = Math.abs(vx) * 0.74;
+        } else if (x > maxX) {
+            x = maxX;
+            vx = -Math.abs(vx) * 0.74;
+        }
+
+        if (y < 0) {
+            y = 0;
+            vy = Math.abs(vy) * 0.48;
+        } else if (y > maxY) {
+            y = maxY;
+            if (vy > 90) {
+                squash = Math.max(0.7, 1 - vy / 2600);
+            }
+            vy = -Math.abs(vy) * 0.64;
+            vx *= 0.84;
+            if (Math.abs(vy) < 80 && Math.abs(vx) < 36) {
+                vy = 0;
+                vx = 0;
+            }
+        }
+    }
+
+    function restOnSurface(incoming) {
+        if (incoming > 90) {
+            squash = Math.max(0.7, 1 - incoming / 2600);
+        }
+        vy = -Math.abs(incoming) * 0.64;
+        vx *= 0.84;
+        if (Math.abs(vy) < 80 && Math.abs(vx) < 36) {
+            vy = 0;
+            vx = 0;
+        }
+    }
+
+    function overlapsBox(box, px, py) {
+        const r = box.getBoundingClientRect();
+        if (r.width < 12 || r.height < 12) {
+            return false;
+        }
+        const left = px + inset;
+        const top = py + inset;
+        const right = px + size - inset;
+        const bottom = py + size - inset;
+        return right > r.left && left < r.right && bottom > r.top && top < r.bottom;
+    }
+
+    function rememberOverlaps() {
+        ignore.length = 0;
+        let i;
+        for (i = 0; i < boxes.length; i += 1) {
+            if (overlapsBox(boxes[i], x, y)) {
+                ignore.push(boxes[i]);
+            }
+        }
+    }
+
+    function bounceBoxes(prevX, prevY) {
+        let n;
+        for (n = 0; n < 2; n += 1) {
+            let i;
+            for (i = 0; i < boxes.length; i += 1) {
+                const box = boxes[i];
+                const r = box.getBoundingClientRect();
+                if (r.width < 12 || r.height < 12) {
+                    continue;
+                }
+
+                const left = x + inset;
+                const top = y + inset;
+                const right = x + size - inset;
+                const bottom = y + size - inset;
+                const overlapX = Math.min(right, r.right) - Math.max(left, r.left);
+                const overlapY = Math.min(bottom, r.bottom) - Math.max(top, r.top);
+                if (overlapX <= 0 || overlapY <= 0) {
+                    const idx = ignore.indexOf(box);
+                    if (idx !== -1) {
+                        ignore.splice(idx, 1);
+                    }
+                    continue;
+                }
+                if (ignore.indexOf(box) !== -1) {
+                    continue;
+                }
+
+                const prevLeft = prevX + inset;
+                const prevTop = prevY + inset;
+                const prevRight = prevX + size - inset;
+                const prevBottom = prevY + size - inset;
+                const hitLeft = prevRight <= r.left && right > r.left;
+                const hitRight = prevLeft >= r.right && left < r.right;
+                const hitTop = prevBottom <= r.top && bottom > r.top;
+                const hitBottom = prevTop >= r.bottom && top < r.bottom;
+
+                if (hitTop || (!hitLeft && !hitRight && !hitBottom && overlapY <= overlapX && vy >= 0)) {
+                    y = r.top - (size - inset);
+                    restOnSurface(vy);
+                } else if (hitBottom || (!hitLeft && !hitRight && overlapY <= overlapX)) {
+                    y = r.bottom - inset;
+                    vy = Math.abs(vy) * 0.48;
+                } else if (hitLeft || (!hitRight && left < r.left + r.width / 2)) {
+                    x = r.left - (size - inset);
+                    vx = -Math.abs(vx) * 0.74;
+                } else {
+                    x = r.right - inset;
+                    vx = Math.abs(vx) * 0.74;
+                }
+            }
+        }
     }
 
     function pickUp(event) {
@@ -86,6 +208,7 @@
         }
         held = false;
         el.classList.remove("is-held");
+        rememberOverlaps();
         if (trail.length >= 2) {
             const a = trail[0];
             const b = trail[trail.length - 1];
@@ -120,36 +243,14 @@
             vx = 0;
             vy = 0;
         } else if (!held && !reduced) {
+            const prevX = x;
+            const prevY = y;
             vy += 2400 * dt;
             x += vx * dt;
             y += vy * dt;
-
-            const maxX = Math.max(0, window.innerWidth - size);
-            const maxY = floorY();
-
-            if (x < 0) {
-                x = 0;
-                vx = Math.abs(vx) * 0.74;
-            } else if (x > maxX) {
-                x = maxX;
-                vx = -Math.abs(vx) * 0.74;
-            }
-
-            if (y < 0) {
-                y = 0;
-                vy = Math.abs(vy) * 0.48;
-            } else if (y > maxY) {
-                y = maxY;
-                if (vy > 90) {
-                    squash = Math.max(0.7, 1 - vy / 2600);
-                }
-                vy = -Math.abs(vy) * 0.64;
-                vx *= 0.84;
-                if (Math.abs(vy) < 80 && Math.abs(vx) < 36) {
-                    vy = 0;
-                    vx = 0;
-                }
-            }
+            bounceWalls();
+            bounceBoxes(prevX, prevY);
+            bounceWalls();
         } else if (!held && reduced) {
             y = Math.min(y, floorY());
             vx = 0;
