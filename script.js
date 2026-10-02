@@ -127,12 +127,20 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function loadPresence() {
-        fetch("operator.json", { cache: "no-store" })
+        fetch("/api/presence", { cache: "no-store", credentials: "same-origin" })
             .then(function (res) {
                 if (!res.ok) {
                     throw new Error("presence");
                 }
                 return res.json();
+            })
+            .catch(function () {
+                return fetch("operator.json", { cache: "no-store" }).then(function (res) {
+                    if (!res.ok) {
+                        throw new Error("presence");
+                    }
+                    return res.json();
+                });
             })
             .then(applyPresence)
             .catch(function () {
