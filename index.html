@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2242913154868628"
      crossorigin="anonymous"></script>
-    <title>Horseradish Host Factory</title>
-    <meta name="description" content="Horseradish is a Host factory. Every restaurant can have a Host. Every storefront. Every real estate agent. Plant it on a site or zip it as an extension.">
+    <title>Horseradish</title>
+    <meta name="description" content="Horseradish. Specialized knowledge, shared. Create a Host, or log in.">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="shortcut icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="styles.css">
@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="is-booting">
     <a class="skip-link" href="#main">Skip to content</a>
 
     <header class="nav-wrap">
@@ -45,42 +45,21 @@
     </header>
 
     <main id="main">
-        <section class="hero" id="top">
-            <p class="num" aria-hidden="true">01</p>
-            <p class="eyebrow">Host Factory</p>
-            <h1>Horseradish is a Host factory.</h1>
-            <p class="lede hero-lede">Walk in with a specialty. Walk out with a someone.</p>
-            <a class="stamp-btn" href="#factory">Build a Host</a>
-            <p class="hero-sub">A Host is specialized knowledge you plant on a site, or zip into an extension. It wakes on a qualifying event. It shares by code. Peer to peer.</p>
-            <ul class="who-row">
-                <li>
-                    <a class="stamp who-card" href="#factory" data-preset="HR-HOUSE">
-                        <p class="agent-kicker">Restaurant</p>
-                        <p>Every restaurant can have a Host.</p>
-                    </a>
-                </li>
-                <li>
-                    <a class="stamp who-card store" href="#factory" data-preset="HR-FLOOR">
-                        <p class="agent-kicker">Storefront</p>
-                        <p>Every storefront can have a Host.</p>
-                    </a>
-                </li>
-                <li>
-                    <a class="stamp who-card listing" href="#factory" data-preset="HR-LISTING">
-                        <p class="agent-kicker">Real estate</p>
-                        <p>Every real estate agent can have a Host.</p>
-                    </a>
-                </li>
-            </ul>
-            <p class="presence hero-presence" data-presence>
-                <span class="presence-dot" aria-hidden="true"></span>
-                <span data-presence-label>Checking Horseradish…</span>
-            </p>
+        <section class="greet" id="top">
+            <img class="greet-face" src="horseradish.png" alt="Horseradish">
+            <h1>Horseradish</h1>
+            <p class="greet-line">Specialized knowledge, shared.</p>
+            <div class="greet-actions">
+                <a class="stamp-btn" href="#factory">Create My Host</a>
+                <button type="button" class="stamp-btn ghost" id="login-cta">Login</button>
+            </div>
+            <div id="greet-google" class="google-slot greet-google"></div>
+            <p class="output-msg greet-note" id="greet-note" role="status"></p>
         </section>
 
         <section id="factory" class="factory">
             <div class="container">
-                <p class="num" aria-hidden="true">02</p>
+                <p class="num" aria-hidden="true">01</p>
                 <p class="eyebrow">The floor</p>
                 <h2>Meet your Host.</h2>
                 <p class="lede host-lede">It is a builder. Give it a body. Feed it. Tell it when to wake. Horseradish codes the rest.</p>
@@ -255,7 +234,7 @@
 
         <section id="field" class="agents">
             <div class="container">
-                <p class="num" aria-hidden="true">03</p>
+                <p class="num" aria-hidden="true">02</p>
                 <p class="eyebrow">In the field</p>
                 <h2>Golda is a Host already at work.</h2>
                 <p class="lede host-lede">Proof. One Host in the field. The factory codes the rest.</p>
@@ -276,7 +255,7 @@
 
         <section id="questions" class="questions">
             <div class="container">
-                <p class="num" aria-hidden="true">04</p>
+                <p class="num" aria-hidden="true">03</p>
                 <p class="eyebrow">Questions</p>
                 <h2>Ask a good question.</h2>
                 <article class="stamp operator-note">
@@ -322,7 +301,7 @@
 
         <section id="contact" class="contact">
             <div class="container">
-                <p class="num" aria-hidden="true">05</p>
+                <p class="num" aria-hidden="true">04</p>
                 <p class="eyebrow">Contact</p>
                 <h2>Horseradish is reachable when the operator is in.</h2>
                 <p class="presence" data-presence>

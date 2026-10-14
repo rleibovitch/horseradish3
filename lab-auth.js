@@ -170,7 +170,100 @@
         try {
             sessionStorage.setItem(WAKE_KEY, JSON.stringify(host));
         } catch (err) {}
-        root.location.href = "index.html?wake=" + encodeURIComponent(host.share);
+        root.location.href = "index.html?wake=" + encodeURIComponent(host.share) + "#factory";
+    }
+
+    function enterDashboard() {
+        root.location.replace("lab.html");
+    }
+
+    function stayOnFactory() {
+        const hash = root.location.hash;
+        if (hash === "#factory" || hash === "#field" || hash === "#questions" || hash === "#contact") {
+            return true;
+        }
+        return Boolean(new URLSearchParams(root.location.search).get("wake"));
+    }
+
+    function promptLogin(onDone) {
+        return load().then(function (cfg) {
+            if (cfg.user) {
+                const result = { ok: true, user: cfg.user };
+                if (onDone) {
+                    onDone(result);
+                } else {
+                    enterDashboard();
+                }
+                return result;
+            }
+            if (!cfg.clientId) {
+                enterDashboard();
+                return { ok: false, needSetup: true };
+            }
+            const slot = document.getElementById("greet-google") || document.getElementById("google-slot");
+            mountButton(slot, function (result) {
+                if (onDone) {
+                    onDone(result);
+                    return;
+                }
+                if (result.ok) {
+                    enterDashboard();
+                }
+            });
+            if (root.google && google.accounts && google.accounts.id && google.accounts.id.prompt) {
+                google.accounts.id.prompt();
+            }
+            return { ok: false, needButton: true };
+        });
+    }
+
+    function bootGreet() {
+        const greet = document.getElementById("top");
+        if (!greet || !greet.classList.contains("greet")) {
+            document.body.classList.remove("is-booting");
+            return;
+        }
+        const loginCta = document.getElementById("login-cta");
+        const note = document.getElementById("greet-note");
+        function ready() {
+            document.body.classList.remove("is-booting");
+        }
+        load().then(function (cfg) {
+            if (cfg.user && !stayOnFactory()) {
+                enterDashboard();
+                return;
+            }
+            ready();
+        }).catch(ready);
+        setTimeout(ready, 1800);
+        const create = greet.querySelector('a[href="#factory"]');
+        if (create) {
+            create.addEventListener("click", function (event) {
+                const target = document.getElementById("factory");
+                if (!target) {
+                    return;
+                }
+                event.preventDefault();
+                root.history.pushState(null, "", "#factory");
+                root.scrollTo({
+                    top: target.getBoundingClientRect().top + root.scrollY - 88,
+                    behavior: "smooth"
+                });
+            });
+        }
+        if (loginCta) {
+            loginCta.addEventListener("click", function () {
+                promptLogin(function (result) {
+                    if (result.ok) {
+                        enterDashboard();
+                        return;
+                    }
+                    if (note && result.message) {
+                        note.textContent = result.message;
+                    }
+                });
+            });
+        }
     }
 
     root.HorseradishLab = {
@@ -184,8 +277,16 @@
         loadHost: loadHost,
         forget: forget,
         wake: wake,
+        enterDashboard: enterDashboard,
+        promptLogin: promptLogin,
         config: function () {
             return config;
         }
     };
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", bootGreet);
+    } else {
+        bootGreet();
+    }
 })(window);

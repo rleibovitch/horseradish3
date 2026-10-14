@@ -231,6 +231,92 @@ h3 {
     text-align: center;
 }
 
+body.is-booting .greet {
+    opacity: 0;
+}
+
+body:has(.greet) {
+    background: #050508;
+}
+
+.greet {
+    min-height: 100svh;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 96px 24px 40px;
+    background: #050508;
+    color: var(--cream);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.greet-face {
+    width: min(220px, 52vw);
+    height: auto;
+    display: block;
+    margin-bottom: 0.55rem;
+    animation: greet-bob 3.2s ease-in-out infinite;
+}
+
+.greet h1 {
+    color: var(--cream);
+    font-size: clamp(2rem, 6vw, 3.6rem);
+    margin-bottom: 0.3rem;
+}
+
+.factory,
+.agents,
+.questions,
+.contact {
+    background:
+        radial-gradient(circle at 12% 18%, rgba(0, 146, 162, 0.08), transparent 28%),
+        radial-gradient(circle at 88% 72%, rgba(193, 0, 120, 0.07), transparent 32%),
+        var(--cream);
+}
+
+.greet-line {
+    font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+    color: rgba(245, 240, 232, 0.78);
+    margin: 0 0 0.2rem;
+}
+
+.greet-actions {
+    display: flex;
+    gap: 0.9rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 1.6rem;
+}
+
+.greet-actions .stamp-btn {
+    margin: 0;
+    transform: none;
+}
+
+.greet-actions .stamp-btn.ghost,
+button.stamp-btn.ghost {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: var(--display);
+    letter-spacing: -0.02em;
+    cursor: pointer;
+}
+
+.greet-google {
+    margin-top: 1rem;
+}
+
+.greet-note {
+    color: var(--gold);
+    min-height: 1.2em;
+    margin-top: 0.7rem;
+}
+
 .hero .num {
     left: 50%;
     transform: translateX(-50%) rotate(-6deg);
@@ -1475,6 +1561,11 @@ h3 {
     align-items: center;
 }
 
+@keyframes greet-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
 @keyframes host-bob {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-6px); }
@@ -1531,7 +1622,8 @@ h3 {
 @media (prefers-reduced-motion: reduce) {
     .host-shape,
     .host-eye,
-    .host-aura {
+    .host-aura,
+    .greet-face {
         animation: none;
     }
 }
