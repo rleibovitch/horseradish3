@@ -1,7 +1,7 @@
 import { cleanHost, json, loadShelf, readUser, writeShelf } from "../lib/lab.js";
 
 function shelfMessage() {
-    return "The Lab door opens. The shelf still needs a private Blob store on Vercel.";
+    return "The Lab door opens. Firestore is not mounted yet.";
 }
 
 export default {
