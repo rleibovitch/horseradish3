@@ -5,12 +5,12 @@
     }
 
     const PRESETS = {
-        "HR-GOLDA": {
-            name: "Golda",
+        "HR-HORSERADISH": {
+            name: "Horseradish",
             body: "square",
-            prompt: "A stoic Host named Golda, ink coat, gold glasses, cream paper light, stamp-shadow, looking straight at you.",
-            specialty: "Antisemitism detection",
-            site: "https://golda.horseradish.ai",
+            prompt: "A cute 3D cube Host named Horseradish, black body, green leaves on top, cream paper light, stamp-shadow, looking straight at you.",
+            specialty: "Specialized knowledge, shared.",
+            site: "https://horseradish.ai",
             fileName: "",
             fileText: "",
             trigger: "always",
@@ -118,7 +118,11 @@
     }
 
     function shareCode() {
-        return "HR-" + slugName(state.name) + "-" + hash4(state.name + "|" + state.specialty + "|" + state.body);
+        const slug = slugName(state.name);
+        if (slug === "HORSERAD") {
+            return "HR-HORSERADISH";
+        }
+        return "HR-" + slug + "-" + hash4(state.name + "|" + state.specialty + "|" + state.body);
     }
 
     function readBody() {
@@ -148,10 +152,12 @@
             setBody("triangle");
         } else if (/\bcircle\b|\bdot\b|\bround\b/.test(text)) {
             setBody("circle");
-        } else if (/\bsquare\b|\bbox\b|\brect\b/.test(text)) {
+        } else if (/\bsquare\b|\bbox\b|\brect\b|\bcube\b/.test(text)) {
             setBody("square");
+        } else if (/\bhumanoid\b|\bhuman\b|\bperson\b|\bfigure\b/.test(text)) {
+            setBody("humanoid");
         } else if (prompt) {
-            setBody("whatever");
+            setBody("humanoid");
         }
         const paint = pickPaint(text);
         if (paint) {
@@ -186,7 +192,10 @@
         if (value === "dot") {
             return "circle";
         }
-        if (value === "circle" || value === "triangle" || value === "whatever") {
+        if (value === "whatever") {
+            return "humanoid";
+        }
+        if (value === "circle" || value === "triangle" || value === "humanoid") {
             return value;
         }
         return "square";
@@ -264,35 +273,35 @@
                 if (host) {
                     fillHost(host);
                 } else {
-                    setMsg("No Host answers to that code. Try HR-GOLDA, HR-HOUSE, HR-FLOOR, or HR-LISTING.");
+                    setMsg("No Host answers to that code. Try HR-HORSERADISH, HR-HOUSE, HR-FLOOR, or HR-LISTING.");
                 }
             });
             return false;
         }
-        setMsg("No Host answers to that code. Try HR-GOLDA, HR-HOUSE, HR-FLOOR, or HR-LISTING.");
+        setMsg("No Host answers to that code. Try HR-HORSERADISH, HR-HOUSE, HR-FLOOR, or HR-LISTING.");
         return false;
     }
 
     function mood() {
         if (!state.name && !state.specialty && !state.fileName && !state.site) {
-            return "Draw me. Feed me. Tell me when to wake.";
+            return "Build me. Teach me. Deploy me.";
         }
         if (!state.name) {
-            return "A body is forming. Give me a name.";
+            return "A shape is forming. Give me a name.";
         }
         if (!state.specialty && !state.fileName && !state.site) {
-            return "That's a face. Feed me a specialty.";
+            return "That's a shape. Give me a brain.";
         }
         if (state.trigger === "phrase" && !state.phrase) {
-            return "I know a few things. What phrase wakes me?";
+            return "Brain is in. What phrase deploys me?";
         }
         if (state.trigger === "page" && !state.page) {
-            return "I know a few things. Which page wakes me?";
+            return "Brain is in. Which page deploys me?";
         }
         if (state.trigger === "always") {
-            return "I'm a Host. Always on. Plant me or zip me.";
+            return "I'm a Host. Always on. Deploy me.";
         }
-        return "I'm a Host. Say the word. Plant me or zip me.";
+        return "I'm a Host. Say the word. Deploy me.";
     }
 
     function render() {
@@ -317,18 +326,18 @@
                     ? "Wakes on " + host.page + "."
                     : "Always-on. Quiet until you need it.";
         }
+        const built = Boolean(state.name || state.prompt || state.portrait);
+        const brained = Boolean(state.specialty || state.fileName || state.site);
+        const wakeReady = state.trigger === "always" || (state.trigger === "phrase" && state.phrase) || (state.trigger === "page" && state.page);
+        const deployed = built && brained && wakeReady;
         being.querySelectorAll("[data-kit]").forEach(function (el) {
             const kit = el.getAttribute("data-kit");
-            let on = false;
-            if (kit === "body") {
-                on = Boolean(state.name || state.prompt || state.portrait);
-            }
-            if (kit === "knowledge") {
-                on = Boolean(state.specialty || state.fileName || state.site);
-            }
-            if (kit === "trigger") {
-                on = state.trigger === "always" || (state.trigger === "phrase" && state.phrase) || (state.trigger === "page" && state.page);
-            }
+            const on = (kit === "build" && built) || (kit === "brain" && brained) || (kit === "deploy" && deployed);
+            el.classList.toggle("is-on", on);
+        });
+        document.querySelectorAll("[data-assembly]").forEach(function (el) {
+            const part = el.getAttribute("data-assembly");
+            const on = (part === "build" && built) || (part === "brain" && brained) || (part === "deploy" && deployed);
             el.classList.toggle("is-on", on);
         });
         document.querySelectorAll("[data-trigger-extra]").forEach(function (el) {
@@ -628,8 +637,8 @@
         paintFromPrompt(promptInput.value);
         render();
         setMsg(state.prompt
-            ? "Nano Banana has the brief. Here is the body until the paint dries."
-            : "Give Nano Banana a prompt first.");
+            ? "Formed. Here is the shape."
+            : "Describe key features first.");
     });
 
     portraitInput.addEventListener("change", function () {

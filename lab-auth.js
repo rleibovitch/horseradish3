@@ -261,7 +261,7 @@
 
     function stayOnFactory() {
         const hash = root.location.hash;
-        if (hash === "#factory" || hash === "#field" || hash === "#questions" || hash === "#contact") {
+        if (hash === "#factory" || hash === "#host" || hash === "#questions" || hash === "#contact") {
             return true;
         }
         return Boolean(new URLSearchParams(root.location.search).get("wake"));

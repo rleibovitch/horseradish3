@@ -435,9 +435,13 @@ button.stamp-btn.ghost {
     position: relative;
 }
 
+.factory {
+    padding-top: 96px;
+}
+
 .agent-row {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 1.4rem;
     align-items: start;
     margin-top: 0.5rem;
@@ -453,16 +457,6 @@ button.stamp-btn.ghost {
 
 .agent.horseradish {
     transform: rotate(-1.6deg);
-}
-
-.agent.golda {
-    background: #1a1a2e;
-    color: var(--white);
-    transform: rotate(1.4deg);
-}
-
-.agent.golda .agent-kicker {
-    color: #ff8ea3;
 }
 
 .agent:hover {
@@ -481,10 +475,6 @@ button.stamp-btn.ghost {
 .agent p:last-child {
     color: var(--muted);
     font-size: 1rem;
-}
-
-.agent.golda p:last-child {
-    color: rgba(255, 255, 255, 0.78);
 }
 
 .question-demo {
@@ -693,7 +683,6 @@ button.stamp-btn.ghost {
     }
 
     .agent.horseradish,
-    .agent.golda,
     .who-card,
     .sources-card,
     .question-bubble {
@@ -952,6 +941,50 @@ button.stamp-btn.ghost {
     text-underline-offset: 3px;
 }
 
+.assembly {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.7rem;
+    margin: 0 0 1.6rem;
+}
+
+.assembly a {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    text-decoration: none;
+    color: var(--ink);
+    font-family: var(--display);
+    font-size: clamp(1.15rem, 3vw, 1.55rem);
+    letter-spacing: -0.03em;
+    border: 2px solid var(--ink);
+    background: var(--paper);
+    box-shadow: 4px 4px 0 var(--ink);
+    padding: 0.7rem 0.85rem 0.65rem;
+}
+
+.assembly a span {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    color: var(--purple);
+}
+
+.assembly a.is-on {
+    background: var(--ink);
+    color: var(--white);
+}
+
+.assembly a.is-on span {
+    color: var(--gold);
+}
+
+.assembly a:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--ink);
+}
+
 .factory-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 280px;
@@ -964,9 +997,17 @@ button.stamp-btn.ghost {
     gap: 1.2rem;
 }
 
+.factory,
+#host,
+#questions,
+#contact {
+    scroll-margin-top: 88px;
+}
+
 .factory-step,
 .output-bay {
     padding: 1.2rem 1.25rem 1.3rem;
+    scroll-margin-top: 88px;
 }
 
 .factory-step:nth-child(1) {
@@ -1097,8 +1138,11 @@ button.stamp-btn.ghost {
     border-bottom-color: var(--gold);
 }
 
+.mini-body.humanoid,
 .mini-body.whatever {
-    border-radius: 32% 48% 36% 44%;
+    width: 16px;
+    height: 28px;
+    border-radius: 10px 10px 4px 4px;
     background: var(--gold);
 }
 
@@ -1170,9 +1214,16 @@ button.stamp-btn.ghost {
     filter: drop-shadow(6px 6px 0 var(--ink));
 }
 
+.host-being[data-body="humanoid"] .host-shape,
 .host-being[data-body="whatever"] .host-shape {
-    border-radius: 34% 48% 36% 44%;
+    width: 100px;
+    height: 148px;
+    border-radius: 50px 50px 22px 22px;
     background: var(--gold);
+}
+
+.host-being[data-body="humanoid"] .host-face {
+    margin-top: 6px;
 }
 
 .host-being.has-knowledge[data-body="square"] .host-shape {
@@ -1280,8 +1331,10 @@ button.stamp-btn.ghost {
 }
 
 .output-bay {
-    margin-top: 1.6rem;
-    transform: rotate(-0.4deg);
+    margin-top: 1.15rem;
+    padding-top: 1.05rem;
+    border-top: 2px dashed var(--ink);
+    transform: none;
 }
 
 .plant-stage {
@@ -1327,8 +1380,11 @@ button.stamp-btn.ghost {
     background: none;
 }
 
+.plant-preview[data-body="humanoid"] .plant-shape,
 .plant-preview[data-body="whatever"] .plant-shape {
-    border-radius: 34% 48% 36% 44%;
+    width: 28px;
+    height: 44px;
+    border-radius: 14px 14px 6px 6px;
     background: var(--gold);
 }
 
@@ -1609,6 +1665,10 @@ button.stamp-btn.ghost {
 }
 
 @media (max-width: 768px) {
+    .assembly {
+        grid-template-columns: 1fr;
+    }
+
     .p2p-row,
     .output-actions {
         display: grid;

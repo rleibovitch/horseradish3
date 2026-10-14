@@ -31,13 +31,12 @@
             <ul class="nav-menu" id="nav-menu">
                 <li><a href="#factory" class="nav-link">Factory</a></li>
                 <li><a href="lab.html" class="nav-link">Lab</a></li>
-                <li><a href="#field" class="nav-link">Golda</a></li>
                 <li><a href="#questions" class="nav-link">Questions</a></li>
                 <li><a href="contact.html" class="nav-link">Contact</a></li>
                 <li>
-                    <a href="contact.html" class="presence" data-presence>
+                    <a href="contact.html" class="presence is-online" data-presence>
                         <span class="presence-dot" aria-hidden="true"></span>
-                        <span data-presence-short>Horseradish</span>
+                        <span data-presence-short>Online</span>
                     </a>
                 </li>
             </ul>
@@ -60,30 +59,36 @@
         <section id="factory" class="factory">
             <div class="container">
                 <p class="num" aria-hidden="true">01</p>
-                <p class="eyebrow">The floor</p>
-                <h2>Meet your Host.</h2>
-                <p class="lede host-lede">It is a builder. Give it a body. Feed it. Tell it when to wake. Horseradish codes the rest.</p>
+                <p class="eyebrow">Assembly</p>
+                <h2>Build. Brain. Deploy.</h2>
+                <p class="lede host-lede">Horseradish is the generic Host. Give it a shape. Give it a brain. Deploy it. The factory codes the rest.</p>
+
+                <ol class="assembly" aria-label="Host assembly">
+                    <li><a href="#step-build" data-assembly="build"><span>01</span> Build</a></li>
+                    <li><a href="#step-brain" data-assembly="brain"><span>02</span> Brain</a></li>
+                    <li><a href="#step-deploy" data-assembly="deploy"><span>03</span> Deploy</a></li>
+                </ol>
 
                 <form class="p2p-bar stamp" id="p2p-form">
                     <label for="share-in">Got a share code?</label>
                     <div class="p2p-row">
-                        <input id="share-in" name="shareIn" type="text" spellcheck="false" placeholder="HR-GOLDA" autocomplete="off">
+                        <input id="share-in" name="shareIn" type="text" spellcheck="false" placeholder="HR-HORSERADISH" autocomplete="off">
                         <button type="submit" class="mini-stamp">Wake it</button>
                     </div>
-                    <p class="field-hint">Peer to peer. A Host swallows a code and inherits the specialty. Try <button type="button" class="text-chip" data-preset="HR-GOLDA">HR-GOLDA</button>, <button type="button" class="text-chip" data-preset="HR-HOUSE">HR-HOUSE</button>, <button type="button" class="text-chip" data-preset="HR-FLOOR">HR-FLOOR</button>, or <button type="button" class="text-chip" data-preset="HR-LISTING">HR-LISTING</button>.</p>
+                    <p class="field-hint">Peer to peer. A Host swallows a code and inherits the specialty. Try <button type="button" class="text-chip" data-preset="HR-HORSERADISH">HR-HORSERADISH</button>, <button type="button" class="text-chip" data-preset="HR-HOUSE">HR-HOUSE</button>, <button type="button" class="text-chip" data-preset="HR-FLOOR">HR-FLOOR</button>, or <button type="button" class="text-chip" data-preset="HR-LISTING">HR-LISTING</button>.</p>
                 </form>
 
                 <div class="factory-grid">
                     <div class="factory-steps">
-                        <article class="stamp factory-step" id="step-design">
-                            <p class="step-num">Step 1</p>
-                            <h3>Design the Host</h3>
-                            <p class="step-copy">A Host is a someone. Square, circle, triangle. Whatever. Whisper a Nano Banana prompt, or upload a face.</p>
+                        <article class="stamp factory-step" id="step-build">
+                            <p class="step-num">01 Build</p>
+                            <h3>Give it a shape</h3>
+                            <p class="step-copy">A Host is a someone. Square, circle, triangle, or humanoid. Describe key features, or upload a face.</p>
 
                             <label class="field-label" for="host-name">Name</label>
-                            <input id="host-name" name="name" type="text" maxlength="40" placeholder="Golda" autocomplete="off">
+                            <input id="host-name" name="name" type="text" maxlength="40" placeholder="Horseradish" autocomplete="off">
 
-                            <p class="field-label" id="body-label">Body</p>
+                            <p class="field-label" id="body-label">Shape</p>
                             <div class="body-picker" role="radiogroup" aria-labelledby="body-label">
                                 <label class="body-opt">
                                     <input type="radio" name="body" value="square" checked>
@@ -107,42 +112,42 @@
                                     </span>
                                 </label>
                                 <label class="body-opt">
-                                    <input type="radio" name="body" value="whatever">
+                                    <input type="radio" name="body" value="humanoid">
                                     <span>
-                                        <i class="mini-body whatever" aria-hidden="true"></i>
-                                        Whatever
+                                        <i class="mini-body humanoid" aria-hidden="true"></i>
+                                        Humanoid
                                     </span>
                                 </label>
                             </div>
 
-                            <label class="field-label" for="nano-prompt">Nano Banana prompt</label>
-                            <textarea id="nano-prompt" name="prompt" rows="3" placeholder="A stoic Host named Golda, ink coat, gold glasses, cream paper light, stamp-shadow, looking straight at you."></textarea>
-                            <button type="button" class="mini-stamp" id="paint-btn">Paint it</button>
+                            <label class="field-label" for="nano-prompt">Describe key features</label>
+                            <textarea id="nano-prompt" name="prompt" rows="3" placeholder="A cute 3D cube Host named Horseradish, black body, green leaves on top, cream paper light, stamp-shadow, looking straight at you."></textarea>
+                            <button type="button" class="mini-stamp" id="paint-btn">Form it</button>
 
                             <label class="field-label" for="portrait-file">Or upload a face</label>
                             <input id="portrait-file" name="portrait" type="file" accept="image/*">
                         </article>
 
-                        <article class="stamp factory-step" id="step-knowledge">
-                            <p class="step-num">Step 2</p>
-                            <h3>Give it knowledge</h3>
+                        <article class="stamp factory-step" id="step-brain">
+                            <p class="step-num">02 Brain</p>
+                            <h3>Give it a brain</h3>
                             <p class="step-copy">This is the specialty. Upload a file. Feed it a website. That is what the Host knows.</p>
 
                             <label class="field-label" for="specialty">Specialty</label>
-                            <input id="specialty" name="specialty" type="text" maxlength="80" placeholder="Antisemitism detection" autocomplete="off">
+                            <input id="specialty" name="specialty" type="text" maxlength="80" placeholder="Specialized knowledge, shared." autocomplete="off">
 
                             <label class="field-label" for="knowledge-file">Upload a file</label>
                             <input id="knowledge-file" name="knowledgeFile" type="file" accept=".txt,.md,.json,.csv,.html,.pdf,.doc,.docx">
                             <p class="file-status" data-file-status>No file yet.</p>
 
                             <label class="field-label" for="site-url">Feed it a website</label>
-                            <input id="site-url" name="site" type="url" placeholder="https://golda.horseradish.ai" autocomplete="off">
+                            <input id="site-url" name="site" type="url" placeholder="https://horseradish.ai" autocomplete="off">
                         </article>
 
-                        <article class="stamp factory-step" id="step-trigger">
-                            <p class="step-num">Step 3</p>
-                            <h3>Qualifying event</h3>
-                            <p class="step-copy">What wakes the Host? Always-on, like Golda on the wire. Or a condition — a phrase, a page, a detector. Helpful when it wakes. Quiet when it doesn't.</p>
+                        <article class="stamp factory-step" id="step-deploy">
+                            <p class="step-num">03 Deploy</p>
+                            <h3>Plant it, or zip it.</h3>
+                            <p class="step-copy">What wakes the Host? Always-on. Or a condition — a phrase, a page. Helpful when it wakes. Quiet when it doesn't. Then plant it on a site, zip it as an extension, or save it to the Lab.</p>
 
                             <p class="field-label" id="trigger-label">When does it wake?</p>
                             <div class="trigger-picker" role="radiogroup" aria-labelledby="trigger-label">
@@ -168,6 +173,35 @@
                                 <label class="field-label" for="trigger-page">The page</label>
                                 <input id="trigger-page" name="page" type="text" placeholder="youtube.com" autocomplete="off">
                             </div>
+
+                            <div class="output-bay" id="output">
+                                <p class="share-kicker">Ready</p>
+                                <div class="plant-stage">
+                                    <div class="plant-preview" id="plant-preview" data-body="square">
+                                        <span class="plant-shape" aria-hidden="true"></span>
+                                        <div>
+                                            <p class="plant-name" id="plant-name">Unnamed Host</p>
+                                            <p class="plant-specialty" id="plant-specialty">A specialty still arriving</p>
+                                            <p class="plant-wake" id="plant-wake">Always-on.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <p class="share-display">
+                                    <span class="share-kicker">Share code</span>
+                                    <code id="share-out">HR-HOST</code>
+                                </p>
+
+                                <div class="output-actions">
+                                    <button type="button" class="stamp-btn output-btn" id="copy-embed">Copy embed HTML</button>
+                                    <button type="button" class="stamp-btn output-btn alt" id="download-zip">Download extension ZIP</button>
+                                    <button type="button" class="stamp-btn output-btn ghost" id="save-factory">Save to the Lab</button>
+                                </div>
+                                <p class="output-msg" id="output-msg" role="status"></p>
+                                <pre class="embed-preview" id="embed-preview" hidden></pre>
+                                <p class="field-hint">Embed HTML for a site. A ZIP for the extension. Saving to the Lab needs Google. Copying does not. The bench in this browser can hold a draft.</p>
+                                <ul class="bench-list" id="bench-list" hidden></ul>
+                            </div>
                         </article>
                     </div>
 
@@ -186,69 +220,41 @@
                                 </div>
                             </div>
                             <p class="host-name" id="host-name-live">Unnamed</p>
-                            <p class="host-mood" id="host-mood">Draw me. Feed me. Tell me when to wake.</p>
+                            <p class="host-mood" id="host-mood">Build me. Teach me. Deploy me.</p>
                             <ul class="host-kit">
-                                <li data-kit="body">Body</li>
-                                <li data-kit="knowledge">Knowledge</li>
-                                <li data-kit="trigger">Trigger</li>
+                                <li data-kit="build">Build</li>
+                                <li data-kit="brain">Brain</li>
+                                <li data-kit="deploy">Deploy</li>
                             </ul>
                             <p class="host-share" id="host-share-live">Share code waiting.</p>
                         </div>
                     </aside>
                 </div>
-
-                <div class="output-bay stamp" id="output">
-                    <p class="step-num">The Host is ready</p>
-                    <h3>Plant it, or zip it.</h3>
-                    <p class="step-copy">Embeddable HTML for a site. A ZIP for the extension. The share code activates the specialty on another Host. Saving to the Lab needs Google. Copying does not.</p>
-
-                    <div class="plant-stage">
-                        <p class="share-kicker">Planted</p>
-                        <div class="plant-preview" id="plant-preview" data-body="square">
-                            <span class="plant-shape" aria-hidden="true"></span>
-                            <div>
-                                <p class="plant-name" id="plant-name">Unnamed Host</p>
-                                <p class="plant-specialty" id="plant-specialty">A specialty still arriving</p>
-                                <p class="plant-wake" id="plant-wake">Always-on.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <p class="share-display">
-                        <span class="share-kicker">Share code</span>
-                        <code id="share-out">HR-HOST</code>
-                    </p>
-
-                    <div class="output-actions">
-                        <button type="button" class="stamp-btn output-btn" id="copy-embed">Copy embed HTML</button>
-                        <button type="button" class="stamp-btn output-btn alt" id="download-zip">Download extension ZIP</button>
-                        <button type="button" class="stamp-btn output-btn ghost" id="save-factory">Save to the Lab</button>
-                    </div>
-                    <p class="output-msg" id="output-msg" role="status"></p>
-                    <pre class="embed-preview" id="embed-preview" hidden></pre>
-                    <p class="field-hint">The bench in this browser can hold a draft. The Lab holds the real one. Google gets you in.</p>
-                    <ul class="bench-list" id="bench-list" hidden></ul>
-                </div>
             </div>
         </section>
 
-        <section id="field" class="agents">
+        <section id="host" class="agents">
             <div class="container">
                 <p class="num" aria-hidden="true">02</p>
-                <p class="eyebrow">In the field</p>
-                <h2>Golda is a Host already at work.</h2>
-                <p class="lede host-lede">Proof. One Host in the field. The factory codes the rest.</p>
+                <p class="eyebrow">The Host</p>
+                <h2>Horseradish is the generic Host.</h2>
+                <p class="lede host-lede">Three parts. Build a shape. Give it a brain. Deploy it. Every Host has a house: orchestrator, knowledge, peer to peer.</p>
                 <div class="agent-row">
-                    <a class="stamp agent golda" href="https://golda.horseradish.ai" target="_blank" rel="noopener noreferrer">
-                        <p class="agent-kicker">A Host</p>
-                        <h3>Golda</h3>
-                        <p>Antisemitism detection for digital wellbeing. Always-on. Off-site, as an extension. Share code HR-GOLDA.</p>
-                    </a>
-                    <div class="stamp agent horseradish">
-                        <p class="agent-kicker">The house</p>
-                        <h3>Every Host</h3>
-                        <p>Orchestrator. Knowledge. Peer to peer. On a site as code, or off-site as an extension.</p>
-                    </div>
+                    <article class="stamp agent">
+                        <p class="agent-kicker">01 Build</p>
+                        <h3>Shape</h3>
+                        <p>A someone. Square, circle, triangle, or humanoid. A name. A face.</p>
+                    </article>
+                    <article class="stamp agent">
+                        <p class="agent-kicker">02 Brain</p>
+                        <h3>Specialty</h3>
+                        <p>A file. A website. That is what the Host knows.</p>
+                    </article>
+                    <article class="stamp agent">
+                        <p class="agent-kicker">03 Deploy</p>
+                        <h3>Plant or zip</h3>
+                        <p>Always-on, or a qualifying event. On a site as code, or off-site as an extension.</p>
+                    </article>
                 </div>
             </div>
         </section>
@@ -269,19 +275,19 @@
                     </details>
                     <details class="stamp faq-item">
                         <summary>02  What is the factory?</summary>
-                        <p>Horseradish codes Hosts. Walk in with a specialty. Design a body, feed it knowledge, tell it when to wake. Walk out with embed HTML or an extension ZIP.</p>
+                        <p>Horseradish codes Hosts. Walk in with a specialty. Build a shape. Give it a brain. Deploy it. Walk out with embed HTML or an extension ZIP.</p>
                     </details>
                     <details class="stamp faq-item">
                         <summary>03  How is this not a chatbot?</summary>
                         <p>A chatbot waits in a bubble. A Host has a house: orchestrator, knowledge, peer to peer. It can live on a site as code, or off-site as an extension. It can stay quiet until the qualifying event.</p>
                     </details>
                     <details class="stamp faq-item">
-                        <summary>04  What about Golda?</summary>
-                        <p>Golda is a Host already in the field. Antisemitism detection. Always-on. Off-site, as an extension. Share code HR-GOLDA. Proof. Not a sibling of the factory.</p>
+                        <summary>04  What is Horseradish?</summary>
+                        <p>Horseradish is the generic Host. The factory. The house. Build, brain, deploy. Share code HR-HORSERADISH. Other Hosts inherit a specialty from it, or from each other.</p>
                     </details>
                     <details class="stamp faq-item">
                         <summary>05  How do share codes work?</summary>
-                        <p>A Host swallows a code and inherits the specialty. HR-GOLDA wakes Golda. HR-HOUSE, HR-FLOOR, and HR-LISTING wake a restaurant, a storefront, and a real estate Host. Give the code to another Host. That is peer to peer.</p>
+                        <p>A Host swallows a code and inherits the specialty. HR-HORSERADISH wakes the generic Host. HR-HOUSE, HR-FLOOR, and HR-LISTING wake a restaurant, a storefront, and a real estate Host. Give the code to another Host. That is peer to peer.</p>
                     </details>
                     <details class="stamp faq-item">
                         <summary>06  Embed or ZIP?</summary>
@@ -303,10 +309,10 @@
             <div class="container">
                 <p class="num" aria-hidden="true">04</p>
                 <p class="eyebrow">Contact</p>
-                <h2>Horseradish is reachable when the operator is in.</h2>
-                <p class="presence" data-presence>
+                <h2>Horseradish is online.</h2>
+                <p class="presence is-online" data-presence>
                     <span class="presence-dot" aria-hidden="true"></span>
-                    <span data-presence-label>Checking Horseradish…</span>
+                    <span data-presence-label>Horseradish is online.</span>
                 </p>
                 <p class="lede"><a href="contact.html">Send the work</a>. We'll meet it.</p>
             </div>
@@ -332,10 +338,10 @@
             <ul>
                 <li><a href="#factory">Factory</a></li>
                 <li><a href="lab.html">Lab</a></li>
-                <li><a href="https://golda.horseradish.ai" target="_blank" rel="noopener noreferrer">Golda</a></li>
+                <li><a href="#host">The Host</a></li>
                 <li><a href="#questions">Questions</a></li>
                 <li><a href="contact.html">Contact</a></li>
-                <li><a href="contact.html" class="presence" data-presence><span class="presence-dot" aria-hidden="true"></span><span data-presence-short>Horseradish</span></a></li>
+                <li><a href="contact.html" class="presence is-online" data-presence><span class="presence-dot" aria-hidden="true"></span><span data-presence-short>Online</span></a></li>
                 <li><a href="https://www.linkedin.com/company/104984695/admin/dashboard/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
             </ul>
         </div>
