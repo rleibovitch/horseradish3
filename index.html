@@ -30,6 +30,7 @@
             </button>
             <ul class="nav-menu" id="nav-menu">
                 <li><a href="#factory" class="nav-link">Factory</a></li>
+                <li><a href="lab.html" class="nav-link">Lab</a></li>
                 <li><a href="#field" class="nav-link">Golda</a></li>
                 <li><a href="#questions" class="nav-link">Questions</a></li>
                 <li><a href="contact.html" class="nav-link">Contact</a></li>
@@ -220,7 +221,7 @@
                 <div class="output-bay stamp" id="output">
                     <p class="step-num">The Host is ready</p>
                     <h3>Plant it, or zip it.</h3>
-                    <p class="step-copy">Embeddable HTML for a site. A ZIP for the extension. The share code activates the specialty on another Host. Saving to the factory floor needs login. Copying does not.</p>
+                    <p class="step-copy">Embeddable HTML for a site. A ZIP for the extension. The share code activates the specialty on another Host. Saving to the Lab needs Google. Copying does not.</p>
 
                     <div class="plant-stage">
                         <p class="share-kicker">Planted</p>
@@ -242,11 +243,11 @@
                     <div class="output-actions">
                         <button type="button" class="stamp-btn output-btn" id="copy-embed">Copy embed HTML</button>
                         <button type="button" class="stamp-btn output-btn alt" id="download-zip">Download extension ZIP</button>
-                        <button type="button" class="stamp-btn output-btn ghost" id="save-factory">Save to factory floor</button>
+                        <button type="button" class="stamp-btn output-btn ghost" id="save-factory">Save to the Lab</button>
                     </div>
                     <p class="output-msg" id="output-msg" role="status"></p>
                     <pre class="embed-preview" id="embed-preview" hidden></pre>
-                    <p class="field-hint">The bench in this browser can hold a draft. The Horseradish Host Factory holds the real one, for operators.</p>
+                    <p class="field-hint">The bench in this browser can hold a draft. The Lab holds the real one. Google gets you in.</p>
                     <ul class="bench-list" id="bench-list" hidden></ul>
                 </div>
             </div>
@@ -280,7 +281,7 @@
                 <h2>Ask a good question.</h2>
                 <article class="stamp operator-note">
                     <p class="agent-kicker">From the floor</p>
-                    <p>The factory is open. A Host is a draft until you plant it. If yours misses, <a href="contact.html">send the work</a>. I'd rather hear it than guess.</p>
+                    <p>The factory is open. Save a Host to the Lab. If yours misses, <a href="contact.html">send the work</a>. I'd rather hear it than guess.</p>
                 </article>
                 <div class="faq-list">
                     <details class="stamp faq-item">
@@ -309,7 +310,7 @@
                     </details>
                     <details class="stamp faq-item">
                         <summary>07  Do I need to log in?</summary>
-                        <p>No. Copying and downloading do not require login. Saving to the Horseradish Host Factory floor does. This browser can keep a bench draft.</p>
+                        <p>No. Copying and downloading do not require login. Saving to the Lab does. Google opens Horseradish. This browser can keep a bench draft.</p>
                     </details>
                     <details class="stamp faq-item">
                         <summary>08  Is Horseradish an MCP?</summary>
@@ -334,12 +335,14 @@
     </main>
 
     <dialog class="login-dialog stamp" id="login-dialog" aria-labelledby="login-title">
-        <p class="agent-kicker">Factory floor</p>
-        <h3 id="login-title">Saving is for operators.</h3>
-        <p>Copy the embed. Take the ZIP. To keep a Host on the Horseradish Host Factory floor, you log in. Login is not on this bench yet.</p>
+        <p class="agent-kicker">The Lab</p>
+        <h3 id="login-title">Save it. Enter Horseradish.</h3>
+        <p>Google opens the Lab. The Host lives on your shelf. Copying and the ZIP stay free.</p>
+        <div id="google-slot" class="google-slot"></div>
+        <p class="output-msg" id="login-note" role="status"></p>
         <div class="dialog-actions">
             <button type="button" class="mini-stamp" id="bench-save">Keep on this bench</button>
-            <a class="mini-stamp alt" href="contact.html">Send the work</a>
+            <a class="text-chip" href="lab.html">Open the Lab</a>
             <button type="button" class="text-chip" id="login-close">Not now</button>
         </div>
     </dialog>
@@ -349,6 +352,7 @@
             <p>Horseradish Host Factory. We code Hosts.</p>
             <ul>
                 <li><a href="#factory">Factory</a></li>
+                <li><a href="lab.html">Lab</a></li>
                 <li><a href="https://golda.horseradish.ai" target="_blank" rel="noopener noreferrer">Golda</a></li>
                 <li><a href="#questions">Questions</a></li>
                 <li><a href="contact.html">Contact</a></li>
@@ -361,7 +365,9 @@
         </div>
     </footer>
 
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="script.js"></script>
+    <script src="lab-auth.js"></script>
     <script src="factory.js"></script>
 </body>
 </html>

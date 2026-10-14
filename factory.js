@@ -201,17 +201,22 @@
         state.body = next;
     }
 
-    function applyPreset(code) {
-        const key = String(code || "").trim().toUpperCase();
-        const fromKnown = PRESETS[key];
-        const fromBench = loadBench().find(function (host) {
-            return host.share === key;
-        });
-        const preset = fromKnown || fromBench;
-        if (!preset) {
-            setMsg("No Host answers to that code. Try HR-GOLDA, HR-HOUSE, HR-FLOOR, or HR-LISTING.");
-            return false;
-        }
+    function readWakeHost(key) {
+        try {
+            const raw = sessionStorage.getItem("horseradish-wake-host");
+            if (!raw) {
+                return null;
+            }
+            const host = JSON.parse(raw);
+            sessionStorage.removeItem("horseradish-wake-host");
+            if (host && String(host.share || "").toUpperCase() === key) {
+                return host;
+            }
+        } catch (err) {}
+        return null;
+    }
+
+    function fillHost(preset) {
         nameInput.value = preset.name || "";
         promptInput.value = preset.prompt || "";
         specialtyInput.value = preset.specialty || "";
@@ -238,8 +243,34 @@
         }
         paintFromPrompt(preset.prompt || "");
         render();
-        setMsg(preset.name + " woke. Peer to peer.");
+        setMsg((preset.name || "Host") + " woke. Peer to peer.");
         return true;
+    }
+
+    function applyPreset(code) {
+        const key = String(code || "").trim().toUpperCase();
+        const fromKnown = PRESETS[key];
+        const fromBench = loadBench().find(function (host) {
+            return host.share === key;
+        });
+        const fromWake = readWakeHost(key);
+        const preset = fromKnown || fromBench || fromWake;
+        if (preset) {
+            return fillHost(preset);
+        }
+        if (window.HorseradishLab && HorseradishLab.loadHost) {
+            setMsg("Asking the Lab for " + key + "…");
+            HorseradishLab.loadHost(key).then(function (host) {
+                if (host) {
+                    fillHost(host);
+                } else {
+                    setMsg("No Host answers to that code. Try HR-GOLDA, HR-HOUSE, HR-FLOOR, or HR-LISTING.");
+                }
+            });
+            return false;
+        }
+        setMsg("No Host answers to that code. Try HR-GOLDA, HR-HOUSE, HR-FLOOR, or HR-LISTING.");
+        return false;
     }
 
     function mood() {
@@ -658,12 +689,59 @@
 
     document.getElementById("copy-embed").addEventListener("click", copyEmbed);
     document.getElementById("download-zip").addEventListener("click", downloadZip);
-    document.getElementById("save-factory").addEventListener("click", function () {
+    const loginNote = document.getElementById("login-note");
+    const googleSlot = document.getElementById("google-slot");
+
+    function openLogin() {
+        if (window.HorseradishLab) {
+            HorseradishLab.load().then(function () {
+                HorseradishLab.mountButton(googleSlot, function (result) {
+                    if (!result.ok) {
+                        if (loginNote) {
+                            loginNote.textContent = result.message || "Google did not let us in.";
+                        }
+                        return;
+                    }
+                    const pending = HorseradishLab.takePending() || spec();
+                    HorseradishLab.save(pending).then(function (saved) {
+                        saveBench(pending);
+                        if (saved.ok) {
+                            window.location.href = "lab.html";
+                            return;
+                        }
+                        if (loginNote) {
+                            loginNote.textContent = saved.message || "The Lab did not take it.";
+                        }
+                    });
+                });
+            });
+        }
         if (typeof dialog.showModal === "function") {
             dialog.showModal();
         } else {
-            setMsg("Saving to the factory floor needs operator login.");
+            setMsg("Saving to the Lab needs Google.");
         }
+    }
+
+    document.getElementById("save-factory").addEventListener("click", function () {
+        const host = spec();
+        if (!window.HorseradishLab) {
+            openLogin();
+            return;
+        }
+        HorseradishLab.save(host).then(function (result) {
+            if (result.ok) {
+                saveBench(host);
+                window.location.href = "lab.html";
+                return;
+            }
+            if (result.needLogin) {
+                openLogin();
+                return;
+            }
+            saveBench(host);
+            setMsg(result.message || "Kept on this bench. The Lab shelf is not mounted yet.");
+        });
     });
     document.getElementById("login-close").addEventListener("click", function () {
         dialog.close();
@@ -671,7 +749,7 @@
     document.getElementById("bench-save").addEventListener("click", function () {
         saveBench(spec());
         dialog.close();
-        setMsg("Kept on this bench. The factory floor still wants an operator.");
+        setMsg("Kept on this bench. The Lab still wants Google.");
     });
 
     render();

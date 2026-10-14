@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    const animateElements = document.querySelectorAll(".agent, .who-card, .question-demo, .factory-step, .host-dock, .output-bay, .faq-item, .operator-note");
+    const animateElements = document.querySelectorAll(".agent, .who-card, .question-demo, .factory-step, .host-dock, .output-bay, .faq-item, .operator-note, .lab-card, .lab-door");
 
     if ("IntersectionObserver" in window) {
         const observer = new IntersectionObserver(function (entries) {
