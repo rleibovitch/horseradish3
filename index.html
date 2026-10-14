@@ -80,7 +80,7 @@
 
                 <div class="factory-grid">
                     <div class="factory-steps">
-                        <article class="stamp factory-step" id="step-build">
+                        <article class="stamp factory-step is-current" id="step-build">
                             <p class="step-num">01 Build</p>
                             <h3>Give it a shape</h3>
                             <p class="step-copy">A Host is a someone. Square, circle, triangle, or humanoid. Describe key features, or upload a face.</p>
@@ -122,13 +122,14 @@
 
                             <label class="field-label" for="nano-prompt">Describe key features</label>
                             <textarea id="nano-prompt" name="prompt" rows="3" placeholder="A cute 3D cube Host named Horseradish, black body, green leaves on top, cream paper light, stamp-shadow, looking straight at you."></textarea>
-                            <button type="button" class="mini-stamp" id="paint-btn">Form it</button>
-
                             <label class="field-label" for="portrait-file">Or upload a face</label>
                             <input id="portrait-file" name="portrait" type="file" accept="image/*">
+
+                            <button type="button" class="mini-stamp" id="paint-btn">Form it</button>
+                            <p class="output-msg" data-card-msg></p>
                         </article>
 
-                        <article class="stamp factory-step" id="step-brain">
+                        <article class="stamp factory-step" id="step-brain" hidden>
                             <p class="step-num">02 Brain</p>
                             <h3>Give it a brain</h3>
                             <p class="step-copy">This is the specialty. Upload a file. Feed it a website. That is what the Host knows.</p>
@@ -142,9 +143,12 @@
 
                             <label class="field-label" for="site-url">Feed it a website</label>
                             <input id="site-url" name="site" type="url" placeholder="https://horseradish.ai" autocomplete="off">
+
+                            <button type="button" class="mini-stamp" id="brain-btn">That's the brain</button>
+                            <p class="output-msg" data-card-msg></p>
                         </article>
 
-                        <article class="stamp factory-step" id="step-deploy">
+                        <article class="stamp factory-step" id="step-deploy" hidden>
                             <p class="step-num">03 Deploy</p>
                             <h3>Plant it, or zip it.</h3>
                             <p class="step-copy">What wakes the Host? Always-on. Or a condition — a phrase, a page. Helpful when it wakes. Quiet when it doesn't. Then plant it on a site, zip it as an extension, or save it to the Lab.</p>

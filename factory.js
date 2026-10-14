@@ -97,7 +97,10 @@
         trigger: "always",
         phrase: "",
         page: "",
-        portrait: ""
+        portrait: "",
+        card: "build",
+        formed: false,
+        brained: false
     };
 
     function hash4(str) {
@@ -251,7 +254,10 @@
             fileStatus.textContent = state.fileName ? ("Fed: " + state.fileName) : "No file yet.";
         }
         paintFromPrompt(preset.prompt || "");
-        render();
+        gather();
+        state.formed = Boolean(state.name);
+        state.brained = Boolean(state.specialty || state.fileName || state.site);
+        showCard(state.brained ? "deploy" : (state.formed ? "brain" : "build"));
         setMsg((preset.name || "Host") + " woke. Peer to peer.");
         return true;
     }
@@ -326,8 +332,8 @@
                     ? "Wakes on " + host.page + "."
                     : "Always-on. Quiet until you need it.";
         }
-        const built = Boolean(state.name || state.prompt || state.portrait);
-        const brained = Boolean(state.specialty || state.fileName || state.site);
+        const built = isBuilt();
+        const brained = isBrained();
         const wakeReady = state.trigger === "always" || (state.trigger === "phrase" && state.phrase) || (state.trigger === "page" && state.page);
         const deployed = built && brained && wakeReady;
         being.querySelectorAll("[data-kit]").forEach(function (el) {
@@ -338,11 +344,65 @@
         document.querySelectorAll("[data-assembly]").forEach(function (el) {
             const part = el.getAttribute("data-assembly");
             const on = (part === "build" && built) || (part === "brain" && brained) || (part === "deploy" && deployed);
+            const locked = (part === "brain" && !built) || (part === "deploy" && !brained);
             el.classList.toggle("is-on", on);
+            el.classList.toggle("is-locked", locked);
+            el.classList.toggle("is-current", part === state.card);
+            if (locked) {
+                el.setAttribute("aria-disabled", "true");
+            } else {
+                el.removeAttribute("aria-disabled");
+            }
         });
         document.querySelectorAll("[data-trigger-extra]").forEach(function (el) {
             el.hidden = el.getAttribute("data-trigger-extra") !== state.trigger;
         });
+        paintCard();
+    }
+
+    function isBuilt() {
+        return Boolean(state.formed && state.name);
+    }
+
+    function isBrained() {
+        return Boolean(state.brained && (state.specialty || state.fileName || state.site));
+    }
+
+    function paintCard() {
+        const cards = {
+            build: document.getElementById("step-build"),
+            brain: document.getElementById("step-brain"),
+            deploy: document.getElementById("step-deploy")
+        };
+        Object.keys(cards).forEach(function (part) {
+            const el = cards[part];
+            if (!el) {
+                return;
+            }
+            const current = part === state.card;
+            el.hidden = !current;
+            el.classList.toggle("is-current", current);
+            if (current) {
+                el.classList.add("in-view");
+                el.style.opacity = "1";
+            }
+        });
+    }
+
+    function showCard(part) {
+        if (part === "brain" && !isBuilt()) {
+            part = "build";
+        }
+        if (part === "deploy" && !isBrained()) {
+            part = isBuilt() ? "brain" : "build";
+        }
+        state.card = part;
+        render();
+        const el = document.getElementById("step-" + part);
+        if (el && typeof el.scrollIntoView === "function") {
+            el.scrollIntoView({ block: "start" });
+            window.scrollBy(0, -88);
+        }
     }
 
     function spec() {
@@ -559,7 +619,13 @@
     }
 
     function setMsg(text) {
-        outputMsg.textContent = text || "";
+        const note = text || "";
+        if (outputMsg) {
+            outputMsg.textContent = note;
+        }
+        document.querySelectorAll("[data-card-msg]").forEach(function (el) {
+            el.textContent = note;
+        });
     }
 
     function loadBench() {
@@ -634,11 +700,26 @@
     factory.addEventListener("change", render);
 
     document.getElementById("paint-btn").addEventListener("click", function () {
+        gather();
+        if (!state.name) {
+            setMsg("Give it a name first.");
+            return;
+        }
         paintFromPrompt(promptInput.value);
-        render();
-        setMsg(state.prompt
-            ? "Formed. Here is the shape."
-            : "Describe key features first.");
+        state.formed = true;
+        setMsg("Formed. Next: the brain.");
+        showCard("brain");
+    });
+
+    document.getElementById("brain-btn").addEventListener("click", function () {
+        gather();
+        if (!state.specialty && !state.fileName && !state.site) {
+            setMsg("Give it a specialty, a file, or a site first.");
+            return;
+        }
+        state.brained = true;
+        setMsg("Brain is in. Deploy it.");
+        showCard("deploy");
     });
 
     portraitInput.addEventListener("change", function () {
@@ -688,6 +769,15 @@
     });
 
     document.addEventListener("click", function (event) {
+        const stamp = event.target.closest("[data-assembly]");
+        if (stamp) {
+            event.preventDefault();
+            if (stamp.classList.contains("is-locked")) {
+                return;
+            }
+            showCard(stamp.getAttribute("data-assembly"));
+            return;
+        }
         const chip = event.target.closest("[data-preset]");
         if (!chip) {
             return;

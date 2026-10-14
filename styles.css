@@ -980,9 +980,25 @@ button.stamp-btn.ghost {
     color: var(--gold);
 }
 
+.assembly a.is-current:not(.is-on) {
+    background: var(--cream);
+    box-shadow: 6px 6px 0 var(--ink);
+}
+
+.assembly a.is-locked {
+    opacity: 0.38;
+    pointer-events: none;
+    box-shadow: 2px 2px 0 var(--ink);
+}
+
 .assembly a:hover {
     transform: translate(-2px, -2px);
     box-shadow: 6px 6px 0 var(--ink);
+}
+
+.assembly a.is-locked:hover {
+    transform: none;
+    box-shadow: 2px 2px 0 var(--ink);
 }
 
 .factory-grid {
@@ -1010,16 +1026,16 @@ button.stamp-btn.ghost {
     scroll-margin-top: 88px;
 }
 
-.factory-step:nth-child(1) {
-    transform: rotate(-0.8deg);
-}
-
-.factory-step:nth-child(2) {
-    transform: rotate(0.7deg);
-}
-
-.factory-step:nth-child(3) {
+.factory-step {
     transform: rotate(-0.5deg);
+}
+
+.factory-step.is-current {
+    transform: none;
+}
+
+.factory-step .mini-stamp {
+    margin-top: 0.85rem;
 }
 
 .step-num {
