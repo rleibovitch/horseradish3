@@ -17,13 +17,15 @@ document.addEventListener("DOMContentLoaded", function () {
         hamburger.setAttribute("aria-label", "Close menu");
     }
 
-    hamburger.addEventListener("click", function () {
-        if (navMenu.classList.contains("open")) {
-            closeMenu();
-        } else {
-            openMenu();
-        }
-    });
+    if (hamburger && navMenu) {
+        hamburger.addEventListener("click", function () {
+            if (navMenu.classList.contains("open")) {
+                closeMenu();
+            } else {
+                openMenu();
+            }
+        });
+    }
 
     navLinks.forEach(function (link) {
         link.addEventListener("click", function () {
@@ -54,7 +56,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    const animateElements = document.querySelectorAll(".agent, .question-demo");
+    const animateElements = document.querySelectorAll(".agent, .who-card, .question-demo, .factory-step, .host-dock, .output-bay, .faq-item, .operator-note");
 
     if ("IntersectionObserver" in window) {
         const observer = new IntersectionObserver(function (entries) {
