@@ -1,5 +1,6 @@
 import {
     clientId,
+    firebasePublic,
     hasShelf,
     json,
     readUser,
@@ -17,7 +18,8 @@ export default {
             return json({
                 user: readUser(request),
                 clientId: clientId(),
-                shelf: hasShelf()
+                shelf: hasShelf(),
+                firebase: firebasePublic()
             });
         }
 
@@ -48,7 +50,7 @@ export default {
             return json({ message: "Google did not let us in." }, 401);
         }
 
-        return json({ user: user, shelf: hasShelf() }, 200, {
+        return json({ user: user, shelf: hasShelf(), firebase: firebasePublic() }, 200, {
             "Set-Cookie": sessionCookie(user)
         });
     }

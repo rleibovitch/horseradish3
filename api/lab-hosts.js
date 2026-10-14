@@ -1,7 +1,7 @@
 import { cleanHost, json, loadShelf, readUser, writeShelf } from "../lib/lab.js";
 
 function shelfMessage() {
-    return "The Lab door opens. Firestore is not mounted yet.";
+    return "The Lab door opens. Firestore still needs Firebase Auth, not a JSON key.";
 }
 
 export default {

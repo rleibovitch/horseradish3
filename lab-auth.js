@@ -1,7 +1,7 @@
 (function (root) {
     const PENDING_KEY = "horseradish-lab-pending";
     const WAKE_KEY = "horseradish-wake-host";
-    let config = { user: null, clientId: "", shelf: false };
+    let config = { user: null, clientId: "", shelf: false, firebase: null };
 
     function fetchJSON(url, options) {
         return fetch(url, Object.assign({ credentials: "same-origin", cache: "no-store" }, options || {}))
@@ -19,8 +19,10 @@
             config = {
                 user: res.body && res.body.user ? res.body.user : null,
                 clientId: (res.body && res.body.clientId) || "",
-                shelf: Boolean(res.body && res.body.shelf)
+                shelf: Boolean(res.body && res.body.shelf),
+                firebase: res.body && res.body.firebase ? res.body.firebase : null
             };
+            initFirebase();
             return config;
         }).catch(function () {
             return config;
@@ -76,6 +78,39 @@
         }
     }
 
+    function initFirebase() {
+        if (!config.firebase || !config.firebase.apiKey || !root.firebase) {
+            return false;
+        }
+        if (!firebase.apps.length) {
+            firebase.initializeApp(config.firebase);
+        }
+        return true;
+    }
+
+    function waitFirebaseUser() {
+        if (!initFirebase()) {
+            return Promise.resolve(null);
+        }
+        if (firebase.auth().currentUser) {
+            return Promise.resolve(firebase.auth().currentUser);
+        }
+        return new Promise(function (resolve) {
+            const unsub = firebase.auth().onAuthStateChanged(function (user) {
+                unsub();
+                resolve(user || null);
+            });
+        });
+    }
+
+    function signInFirebase(credential) {
+        if (!initFirebase() || !credential) {
+            return Promise.resolve(null);
+        }
+        const cred = firebase.auth.GoogleAuthProvider.credential(credential);
+        return firebase.auth().signInWithCredential(cred);
+    }
+
     function login(credential) {
         return fetchJSON("/api/lab-session", {
             method: "POST",
@@ -87,12 +122,25 @@
             }
             config.user = res.body.user;
             config.shelf = Boolean(res.body.shelf);
-            return { ok: true, user: config.user };
+            config.firebase = res.body.firebase || config.firebase;
+            return signInFirebase(credential).then(function () {
+                config.shelf = true;
+                return { ok: true, user: config.user };
+            }).catch(function () {
+                return {
+                    ok: true,
+                    user: config.user,
+                    message: "Google is in. Enable Google sign-in in Firebase Auth so the shelf can open."
+                };
+            });
         });
     }
 
     function logout() {
-        return fetchJSON("/api/lab-session", { method: "DELETE" }).then(function () {
+        const out = initFirebase() ? firebase.auth().signOut().catch(function () {}) : Promise.resolve();
+        return out.then(function () {
+            return fetchJSON("/api/lab-session", { method: "DELETE" });
+        }).then(function () {
             config.user = null;
             return true;
         });
@@ -106,21 +154,37 @@
                 } catch (err) {}
                 return { ok: false, needLogin: true };
             }
-            return fetchJSON("/api/lab-hosts", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ host: host })
-            }).then(function (res) {
-                if (res.status === 401) {
-                    try {
-                        sessionStorage.setItem(PENDING_KEY, JSON.stringify(host));
-                    } catch (err) {}
-                    return { ok: false, needLogin: true };
+            return waitFirebaseUser().then(function (user) {
+                if (user) {
+                    const incoming = host || {};
+                    const ref = firebase.firestore().collection("lab").doc(user.uid);
+                    return ref.get().then(function (snap) {
+                        const hosts = snap.exists && Array.isArray(snap.data().hosts) ? snap.data().hosts : [];
+                        const next = hosts.filter(function (item) {
+                            return item.share !== incoming.share;
+                        });
+                        next.unshift(incoming);
+                        return ref.set({ hosts: next.slice(0, 24) });
+                    }).then(function () {
+                        return { ok: true, host: incoming };
+                    });
                 }
-                if (!res.ok) {
-                    return { ok: false, message: (res.body && res.body.message) || "The Lab did not take it." };
-                }
-                return { ok: true, host: res.body.host };
+                return fetchJSON("/api/lab-hosts", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ host: host })
+                }).then(function (res) {
+                    if (res.status === 401) {
+                        try {
+                            sessionStorage.setItem(PENDING_KEY, JSON.stringify(host));
+                        } catch (err) {}
+                        return { ok: false, needLogin: true };
+                    }
+                    if (!res.ok) {
+                        return { ok: false, message: (res.body && res.body.message) || "The Lab did not take it." };
+                    }
+                    return { ok: true, host: res.body.host };
+                });
             });
         });
     }
@@ -136,25 +200,29 @@
     }
 
     function list() {
-        return fetchJSON("/api/lab-hosts").then(function (res) {
-            if (!res.ok) {
-                return { ok: false, hosts: [], message: res.body && res.body.message };
+        return waitFirebaseUser().then(function (user) {
+            if (user) {
+                return firebase.firestore().collection("lab").doc(user.uid).get().then(function (snap) {
+                    const hosts = snap.exists && Array.isArray(snap.data().hosts) ? snap.data().hosts : [];
+                    return { ok: true, hosts: hosts };
+                });
             }
-            return { ok: true, hosts: res.body.hosts || [] };
+            return fetchJSON("/api/lab-hosts").then(function (res) {
+                if (!res.ok) {
+                    return { ok: false, hosts: [], message: res.body && res.body.message };
+                }
+                return { ok: true, hosts: res.body.hosts || [] };
+            });
         });
     }
 
     function loadHost(share) {
-        return fetchJSON("/api/lab-hosts?share=" + encodeURIComponent(share)).then(function (res) {
-            if (!res.ok) {
+        return list().then(function (result) {
+            if (!result.ok) {
                 return null;
             }
-            if (res.body && res.body.host) {
-                return res.body.host;
-            }
             const key = String(share || "").toUpperCase();
-            const hosts = (res.body && res.body.hosts) || [];
-            return hosts.find(function (host) {
+            return result.hosts.find(function (host) {
                 return String(host.share || "").toUpperCase() === key;
             }) || null;
         }).catch(function () {
@@ -163,7 +231,21 @@
     }
 
     function forget(share) {
-        return fetchJSON("/api/lab-hosts?share=" + encodeURIComponent(share), { method: "DELETE" });
+        return waitFirebaseUser().then(function (user) {
+            if (user) {
+                const key = String(share || "").toUpperCase();
+                const ref = firebase.firestore().collection("lab").doc(user.uid);
+                return ref.get().then(function (snap) {
+                    const hosts = snap.exists && Array.isArray(snap.data().hosts) ? snap.data().hosts : [];
+                    return ref.set({
+                        hosts: hosts.filter(function (item) {
+                            return String(item.share || "").toUpperCase() !== key;
+                        })
+                    });
+                });
+            }
+            return fetchJSON("/api/lab-hosts?share=" + encodeURIComponent(share), { method: "DELETE" });
+        });
     }
 
     function wake(host) {
