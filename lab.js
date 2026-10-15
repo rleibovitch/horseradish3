@@ -137,6 +137,36 @@
         });
     }
 
+    const p2p = document.getElementById("p2p-form");
+    const shareIn = document.getElementById("share-in");
+
+    function wakeCode(code) {
+        const key = String(code || "").trim();
+        if (!key) {
+            showNote("Give it a share code.");
+            return;
+        }
+        window.location.href = "index.html?wake=" + encodeURIComponent(key) + "#factory";
+    }
+
+    if (p2p) {
+        p2p.addEventListener("submit", function (event) {
+            event.preventDefault();
+            wakeCode(shareIn && shareIn.value);
+        });
+        p2p.addEventListener("click", function (event) {
+            const chip = event.target.closest("[data-preset]");
+            if (!chip) {
+                return;
+            }
+            const preset = chip.getAttribute("data-preset");
+            if (shareIn) {
+                shareIn.value = preset;
+            }
+            wakeCode(preset);
+        });
+    }
+
     Lab.load().then(function (cfg) {
         if (cfg.user) {
             return afterLogin();

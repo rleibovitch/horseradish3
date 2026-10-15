@@ -5,7 +5,7 @@
     }
 
     const PRESETS = {
-        "HR-HORSERADISH": {
+        "HOST-HORSERADISH": {
             name: "Horseradish",
             body: "square",
             prompt: "A cute 3D cube Host named Horseradish, black body, green leaves on top, cream paper light, stamp-shadow, looking straight at you.",
@@ -18,7 +18,7 @@
             page: "",
             portrait: ""
         },
-        "HR-HOUSE": {
+        "HOST-HOUSE": {
             name: "House",
             body: "square",
             prompt: "A square Host for a restaurant. Knows the menu, the hours, the table.",
@@ -31,7 +31,7 @@
             page: "",
             portrait: ""
         },
-        "HR-FLOOR": {
+        "HOST-FLOOR": {
             name: "Floor",
             body: "circle",
             prompt: "A circle Host for a storefront. Knows what you have and when you are open.",
@@ -44,7 +44,7 @@
             page: "",
             portrait: ""
         },
-        "HR-LISTING": {
+        "HOST-LISTING": {
             name: "Listing",
             body: "triangle",
             prompt: "A triangle Host for a real estate agent. Knows the house, the block, the showing.",
@@ -103,29 +103,16 @@
         brained: false
     };
 
-    function hash4(str) {
-        let h = 2166136261;
-        for (let i = 0; i < str.length; i += 1) {
-            h ^= str.charCodeAt(i);
-            h = Math.imul(h, 16777619);
-        }
-        return (h >>> 0).toString(36).toUpperCase().replace(/[^A-Z0-9]/g, "").padEnd(4, "X").slice(0, 4);
-    }
-
     function slugName(name) {
         const slug = String(name || "")
             .replace(/[^A-Za-z0-9]/g, "")
-            .slice(0, 8)
+            .slice(0, 16)
             .toUpperCase();
-        return slug || "HOST";
+        return slug || "UNNAMED";
     }
 
     function shareCode() {
-        const slug = slugName(state.name);
-        if (slug === "HORSERAD") {
-            return "HR-HORSERADISH";
-        }
-        return "HR-" + slug + "-" + hash4(state.name + "|" + state.specialty + "|" + state.body);
+        return "HOST-" + slugName(state.name);
     }
 
     function readBody() {
@@ -221,7 +208,8 @@
             }
             const host = JSON.parse(raw);
             sessionStorage.removeItem("horseradish-wake-host");
-            if (host && String(host.share || "").toUpperCase() === key) {
+            const share = normalizeShare(host.share);
+            if (host && (share === key || String(host.share || "").toUpperCase() === key)) {
                 return host;
             }
         } catch (err) {}
@@ -262,11 +250,16 @@
         return true;
     }
 
+    function normalizeShare(code) {
+        return String(code || "").trim().toUpperCase().replace(/^HR-/, "HOST-");
+    }
+
     function applyPreset(code) {
-        const key = String(code || "").trim().toUpperCase();
-        const fromKnown = PRESETS[key];
+        const raw = String(code || "").trim().toUpperCase();
+        const key = normalizeShare(raw);
+        const fromKnown = PRESETS[key] || PRESETS[raw];
         const fromBench = loadBench().find(function (host) {
-            return host.share === key;
+            return normalizeShare(host.share) === key || String(host.share || "").toUpperCase() === raw;
         });
         const fromWake = readWakeHost(key);
         const preset = fromKnown || fromBench || fromWake;
@@ -279,12 +272,12 @@
                 if (host) {
                     fillHost(host);
                 } else {
-                    setMsg("No Host answers to that code. Try HR-HORSERADISH, HR-HOUSE, HR-FLOOR, or HR-LISTING.");
+                    setMsg("No Host answers to that code. Try HOST-HORSERADISH, HOST-HOUSE, HOST-FLOOR, or HOST-LISTING.");
                 }
             });
             return false;
         }
-        setMsg("No Host answers to that code. Try HR-HORSERADISH, HR-HOUSE, HR-FLOOR, or HR-LISTING.");
+        setMsg("No Host answers to that code. Try HOST-HORSERADISH, HOST-HOUSE, HOST-FLOOR, or HOST-LISTING.");
         return false;
     }
 
@@ -763,10 +756,13 @@
         setMsg("Knowledge is in. The Host is chewing.");
     });
 
-    document.getElementById("p2p-form").addEventListener("submit", function (event) {
-        event.preventDefault();
-        applyPreset(shareIn.value);
-    });
+    const p2pForm = document.getElementById("p2p-form");
+    if (p2pForm) {
+        p2pForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+            applyPreset(shareIn.value);
+        });
+    }
 
     document.addEventListener("click", function (event) {
         const stamp = event.target.closest("[data-assembly]");
@@ -782,8 +778,11 @@
         if (!chip) {
             return;
         }
-        shareIn.value = chip.getAttribute("data-preset");
-        applyPreset(chip.getAttribute("data-preset"));
+        const preset = chip.getAttribute("data-preset");
+        if (shareIn) {
+            shareIn.value = preset;
+        }
+        applyPreset(preset);
     });
 
     document.getElementById("copy-embed").addEventListener("click", copyEmbed);
@@ -856,7 +855,9 @@
 
     const wake = new URLSearchParams(window.location.search).get("wake");
     if (wake) {
-        shareIn.value = wake;
+        if (shareIn) {
+            shareIn.value = wake;
+        }
         applyPreset(wake);
     }
 })();

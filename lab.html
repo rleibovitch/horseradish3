@@ -70,9 +70,20 @@
                 <p class="output-msg" id="lab-note" role="status"></p>
 
                 <div class="lab-floor" id="lab-floor" hidden>
+                    <form class="p2p-bar stamp" id="p2p-form">
+                        <p class="eyebrow">Share</p>
+                        <h2>Got a share code?</h2>
+                        <label class="field-label" for="share-in">Share code</label>
+                        <div class="p2p-row">
+                            <input id="share-in" name="shareIn" type="text" spellcheck="false" placeholder="HOST-HORSERADISH" autocomplete="off">
+                            <button type="submit" class="mini-stamp">Wake it</button>
+                        </div>
+                        <p class="field-hint">Peer to peer. A Host swallows a code and inherits the specialty. Try <button type="button" class="text-chip" data-preset="HOST-HORSERADISH">HOST-HORSERADISH</button>, <button type="button" class="text-chip" data-preset="HOST-HOUSE">HOST-HOUSE</button>, <button type="button" class="text-chip" data-preset="HOST-FLOOR">HOST-FLOOR</button>, or <button type="button" class="text-chip" data-preset="HOST-LISTING">HOST-LISTING</button>.</p>
+                    </form>
+
                     <p class="eyebrow">Your shelf</p>
                     <h2>Wake one. Release one.</h2>
-                    <p class="lede host-lede">These are yours. Peer to peer still works by share code.</p>
+                    <p class="lede host-lede">These are yours. Wake a share code above, or one from the shelf.</p>
                     <p class="lab-empty" id="lab-empty" hidden>No Hosts on this shelf. Go build one.</p>
                     <div class="lab-grid" id="lab-grid"></div>
                     <a class="stamp-btn" href="index.html#factory">Build another</a>
