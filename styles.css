@@ -2091,6 +2091,18 @@ body.os-body {
     align-items: center;
     gap: 0.6rem;
     min-width: 0;
+    border: 0;
+    background: transparent;
+    padding: 0.2rem 0.35rem 0.2rem 0.2rem;
+    border-radius: 999px;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.os-user:hover {
+    background: #f3f4f6;
 }
 
 .os-face,

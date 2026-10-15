@@ -87,6 +87,41 @@
         return days === 1 ? "1 day ago" : days + " days ago";
     }
 
+    function stamp(fromIso) {
+        const then = new Date(fromIso);
+        if (Number.isNaN(then.getTime())) {
+            return ago(fromIso);
+        }
+        return then.toLocaleString(undefined, {
+            dateStyle: "medium",
+            timeStyle: "short"
+        }) + " · " + ago(fromIso);
+    }
+
+    function logCopy(entry) {
+        const name = entry.name || entry.share || "Host";
+        if (entry.action === "rebuilt") {
+            return name + " rebuilt";
+        }
+        if (entry.action === "redeployed") {
+            return name + " redeployed";
+        }
+        if (entry.action === "deployed") {
+            return name + " deployed";
+        }
+        return name + " built";
+    }
+
+    function logTone(action) {
+        if (action === "redeployed" || action === "deployed") {
+            return "active";
+        }
+        if (action === "rebuilt") {
+            return "idle";
+        }
+        return "offline";
+    }
+
     function activityCopy(host) {
         if (host.site) {
             return host.name + " is placed on " + host.site + ".";
@@ -157,7 +192,7 @@
         const wake = document.createElement("button");
         wake.type = "button";
         wake.className = "os-mini";
-        wake.textContent = "Wake";
+        wake.textContent = "Edit";
         wake.addEventListener("click", function () {
             Lab.wake(host);
         });
@@ -210,7 +245,34 @@
             const copy = document.createElement("div");
             copy.appendChild(document.createTextNode(activityCopy(host)));
             const time = document.createElement("time");
-            time.textContent = ago(host.savedAt);
+            time.textContent = stamp(host.savedAt);
+            copy.appendChild(time);
+            item.appendChild(dot);
+            item.appendChild(copy);
+            el.appendChild(item);
+        });
+    }
+
+    function fillLogs(el, logs) {
+        if (!el) {
+            return;
+        }
+        el.innerHTML = "";
+        if (!logs.length) {
+            const item = document.createElement("li");
+            item.textContent = "No rebuilds or redeployments yet. Edit a Host and save it to the Portal.";
+            el.appendChild(item);
+            return;
+        }
+        logs.forEach(function (entry) {
+            const item = document.createElement("li");
+            const dot = document.createElement("span");
+            dot.className = "os-dot is-" + logTone(entry.action);
+            const copy = document.createElement("div");
+            copy.appendChild(document.createTextNode(logCopy(entry)));
+            const time = document.createElement("time");
+            time.dateTime = entry.at || "";
+            time.textContent = stamp(entry.at);
             copy.appendChild(time);
             item.appendChild(dot);
             item.appendChild(copy);
@@ -225,7 +287,7 @@
         taskList.innerHTML = "";
         if (!list.length) {
             const item = document.createElement("li");
-            item.textContent = "No tasks yet. Place a Host on an asset, or wake one from the fleet.";
+            item.textContent = "No tasks yet. Place a Host on an asset, or edit one from the fleet.";
             taskList.appendChild(item);
             return;
         }
@@ -244,7 +306,7 @@
             const wake = document.createElement("button");
             wake.type = "button";
             wake.className = "os-mini";
-            wake.textContent = "Wake";
+            wake.textContent = "Edit";
             wake.addEventListener("click", function () {
                 Lab.wake(host);
             });
@@ -284,7 +346,7 @@
             nameEl.textContent = user.name || user.email || "Operator";
         }
         if (roleEl) {
-            roleEl.textContent = "Member";
+            roleEl.textContent = "Log out";
         }
         if (perm) {
             perm.textContent = (user.name || user.email) + " holds this door.";
@@ -294,6 +356,7 @@
     function paintFloor() {
         return Lab.list().then(function (result) {
             hosts = result.ok ? result.hosts || [] : [];
+            const logs = result.ok ? result.logs || [] : [];
             const shown = hosts.filter(matches);
             const active = hosts.filter(function (host) {
                 return statusOf(host) === "active";
@@ -314,7 +377,7 @@
                 fillTable(fleetBody, []);
                 fillTable(hostsBody, []);
                 fillActivity(activityList, []);
-                fillActivity(logsList, []);
+                fillLogs(logsList, []);
                 fillTasks([]);
                 if (buildBtn) {
                     buildBtn.textContent = "+ Create New Host";
@@ -337,8 +400,12 @@
 
             fillTable(fleetBody, shown);
             fillTable(hostsBody, shown);
-            fillActivity(activityList, shown.length ? shown : hosts);
-            fillActivity(logsList, hosts);
+            if (logs.length) {
+                fillLogs(activityList, logs.slice(0, 8));
+            } else {
+                fillActivity(activityList, shown.length ? shown : hosts);
+            }
+            fillLogs(logsList, logs);
             fillTasks(shown.length ? shown : hosts);
             return true;
         });
@@ -472,13 +539,18 @@
         }
     });
 
+    function leavePortal() {
+        Lab.logout().then(function () {
+            window.location.reload();
+        });
+    }
+
+    if (who) {
+        who.addEventListener("click", leavePortal);
+    }
     const leave = document.getElementById("os-leave");
     if (leave) {
-        leave.addEventListener("click", function () {
-            Lab.logout().then(function () {
-                window.location.reload();
-            });
-        });
+        leave.addEventListener("click", leavePortal);
     }
 
     Lab.load().then(function (cfg) {

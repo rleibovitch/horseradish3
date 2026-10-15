@@ -173,6 +173,10 @@
         });
     }
 
+    function shareKey(value) {
+        return String(value || "").trim().toUpperCase().replace(/^HR-/, "HOST-");
+    }
+
     function save(host) {
         return load().then(function (cfg) {
             if (!cfg.user) {
@@ -185,15 +189,49 @@
                 if (!user) {
                     return { ok: false, needLogin: true, message: "Sign in once more so Firebase Auth can keep your Host." };
                 }
-                const incoming = host || {};
+                const incoming = Object.assign({}, host || {});
+                const drop = {};
+                drop[shareKey(incoming.share)] = true;
+                if (incoming.wasShare) {
+                    drop[shareKey(incoming.wasShare)] = true;
+                }
+                delete incoming.wasShare;
                 const ref = firebase.firestore().collection("lab").doc(user.uid);
                 return ref.get().then(function (snap) {
-                    const hosts = snap.exists && Array.isArray(snap.data().hosts) ? snap.data().hosts : [];
+                    const data = snap.exists ? snap.data() : {};
+                    const hosts = Array.isArray(data.hosts) ? data.hosts : [];
+                    const logs = Array.isArray(data.logs) ? data.logs.slice() : [];
+                    const existing = hosts.find(function (item) {
+                        return drop[shareKey(item.share)];
+                    });
+                    const now = new Date().toISOString();
+                    const again = Boolean(existing);
+                    incoming.savedAt = now;
+                    incoming.builtAt = (existing && existing.builtAt) || now;
+                    incoming.deployedAt = now;
+                    if (again) {
+                        incoming.rebuiltAt = now;
+                        incoming.redeployedAt = now;
+                    }
                     const next = hosts.filter(function (item) {
-                        return item.share !== incoming.share;
+                        return !drop[shareKey(item.share)];
                     });
                     next.unshift(incoming);
-                    return ref.set({ hosts: next.slice(0, 24) });
+                    const entry = {
+                        at: now,
+                        share: incoming.share,
+                        name: incoming.name || "Unnamed Host"
+                    };
+                    if (again) {
+                        logs.unshift(Object.assign({ action: "redeployed" }, entry));
+                        logs.unshift(Object.assign({ action: "rebuilt" }, entry));
+                    } else {
+                        logs.unshift(Object.assign({ action: "deployed" }, entry));
+                    }
+                    return ref.set({
+                        hosts: next.slice(0, 24),
+                        logs: logs.slice(0, 80)
+                    });
                 }).then(function () {
                     return { ok: true, host: incoming };
                 }).catch(function (err) {
@@ -219,16 +257,21 @@
                 return {
                     ok: false,
                     hosts: [],
+                    logs: [],
                     message: config.user
                         ? "Sign in once more so Firebase Auth can open your Host."
                         : "Enter the Portal first."
                 };
             }
             return firebase.firestore().collection("lab").doc(user.uid).get().then(function (snap) {
-                const hosts = snap.exists && Array.isArray(snap.data().hosts) ? snap.data().hosts : [];
-                return { ok: true, hosts: hosts };
+                const data = snap.exists ? snap.data() : {};
+                return {
+                    ok: true,
+                    hosts: Array.isArray(data.hosts) ? data.hosts : [],
+                    logs: Array.isArray(data.logs) ? data.logs : []
+                };
             }).catch(function (err) {
-                return { ok: false, hosts: [], message: firebaseMiss(err) };
+                return { ok: false, hosts: [], logs: [], message: firebaseMiss(err) };
             });
         });
     }
@@ -238,9 +281,9 @@
             if (!result.ok) {
                 return null;
             }
-            const key = String(share || "").toUpperCase();
+            const key = shareKey(share);
             return result.hosts.find(function (host) {
-                return String(host.share || "").toUpperCase() === key;
+                return shareKey(host.share) === key;
             }) || null;
         }).catch(function () {
             return null;
@@ -255,11 +298,14 @@
             const key = String(share || "").toUpperCase();
             const ref = firebase.firestore().collection("lab").doc(user.uid);
             return ref.get().then(function (snap) {
-                const hosts = snap.exists && Array.isArray(snap.data().hosts) ? snap.data().hosts : [];
+                const data = snap.exists ? snap.data() : {};
+                const hosts = Array.isArray(data.hosts) ? data.hosts : [];
+                const logs = Array.isArray(data.logs) ? data.logs : [];
                 return ref.set({
                     hosts: hosts.filter(function (item) {
                         return String(item.share || "").toUpperCase() !== key;
-                    })
+                    }),
+                    logs: logs
                 });
             });
         });
@@ -269,7 +315,7 @@
         try {
             sessionStorage.setItem(WAKE_KEY, JSON.stringify(host));
         } catch (err) {}
-        root.location.href = "index.html?wake=" + encodeURIComponent(host.share) + "#factory";
+        root.location.href = "index.html?edit=" + encodeURIComponent(host.share) + "#factory";
     }
 
     function enterDashboard() {
@@ -281,7 +327,8 @@
         if (hash === "#factory" || hash === "#host") {
             return true;
         }
-        return Boolean(new URLSearchParams(root.location.search).get("wake"));
+        const params = new URLSearchParams(root.location.search);
+        return Boolean(params.get("wake") || params.get("edit"));
     }
 
     function promptLogin(onDone) {

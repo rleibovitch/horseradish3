@@ -100,7 +100,8 @@
         portrait: "",
         card: "build",
         formed: false,
-        brained: false
+        brained: false,
+        editShare: ""
     };
 
     function slugName(name) {
@@ -216,14 +217,14 @@
         return null;
     }
 
-    function fillHost(preset) {
+    function fillHost(preset, opts) {
+        const editing = Boolean(opts && opts.edit);
         nameInput.value = preset.name || "";
         promptInput.value = preset.prompt || "";
         specialtyInput.value = preset.specialty || "";
         siteInput.value = preset.site || "";
         phraseInput.value = preset.phrase || "";
         pageInput.value = preset.page || "";
-        setBody(normalizeBody(preset.body));
         const triggerRadio = factory.querySelector("input[name='trigger'][value='" + (preset.trigger || "always") + "']");
         if (triggerRadio) {
             triggerRadio.checked = true;
@@ -231,6 +232,7 @@
         state.fileName = preset.fileName || "";
         state.fileText = preset.fileText || "";
         state.portrait = preset.portrait || "";
+        state.editShare = editing ? normalizeShare(preset.share) : "";
         if (state.portrait) {
             portraitImg.src = state.portrait;
             portraitImg.hidden = false;
@@ -241,12 +243,17 @@
         if (fileStatus) {
             fileStatus.textContent = state.fileName ? ("Fed: " + state.fileName) : "No file yet.";
         }
-        paintFromPrompt(preset.prompt || "");
+        if (!editing) {
+            paintFromPrompt(preset.prompt || "");
+        }
+        setBody(normalizeBody(preset.body));
         gather();
         state.formed = Boolean(state.name);
         state.brained = Boolean(state.specialty || state.fileName || state.site);
-        showCard(state.brained ? "deploy" : (state.formed ? "brain" : "build"));
-        setMsg((preset.name || "Host") + " woke. Peer to peer.");
+        showCard(editing ? "build" : (state.brained ? "deploy" : (state.formed ? "brain" : "build")));
+        setMsg(editing
+            ? ("Editing " + (preset.name || "this Host") + ". Change the shape, the knowledge, or place it again.")
+            : ((preset.name || "Host") + " woke. Peer to peer."));
         return true;
     }
 
@@ -254,23 +261,47 @@
         return String(code || "").trim().toUpperCase().replace(/^HR-/, "HOST-");
     }
 
-    function applyPreset(code) {
-        const raw = String(code || "").trim().toUpperCase();
-        const key = normalizeShare(raw);
-        const fromKnown = PRESETS[key] || PRESETS[raw];
-        const fromBench = loadBench().find(function (host) {
+    function findBench(key, raw) {
+        return loadBench().find(function (host) {
             return normalizeShare(host.share) === key || String(host.share || "").toUpperCase() === raw;
         });
+    }
+
+    function applyPreset(code, opts) {
+        const editing = Boolean(opts && opts.edit);
+        const raw = String(code || "").trim().toUpperCase();
+        const key = normalizeShare(raw);
         const fromWake = readWakeHost(key);
-        const preset = fromKnown || fromBench || fromWake;
-        if (preset) {
-            return fillHost(preset);
+        if (fromWake) {
+            return fillHost(fromWake, { edit: true });
+        }
+        const fromBench = findBench(key, raw);
+        const fromKnown = PRESETS[key] || PRESETS[raw];
+        if (editing) {
+            if (window.HorseradishLab && HorseradishLab.loadHost) {
+                setMsg("Opening " + key + " to edit…");
+                HorseradishLab.loadHost(key).then(function (host) {
+                    if (host) {
+                        fillHost(host, { edit: true });
+                    } else if (fromBench || fromKnown) {
+                        fillHost(fromBench || fromKnown, { edit: Boolean(fromBench) });
+                    } else {
+                        setMsg("No Host answers to that code. Try HOST-HORSERADISH, HOST-HOUSE, HOST-FLOOR, or HOST-LISTING.");
+                    }
+                });
+                return false;
+            }
+            if (fromBench || fromKnown) {
+                return fillHost(fromBench || fromKnown, { edit: Boolean(fromBench) });
+            }
+        } else if (fromKnown || fromBench) {
+            return fillHost(fromKnown || fromBench);
         }
         if (window.HorseradishLab && HorseradishLab.loadHost) {
             setMsg("Asking the Portal for " + key + "…");
             HorseradishLab.loadHost(key).then(function (host) {
                 if (host) {
-                    fillHost(host);
+                    fillHost(host, { edit: true });
                 } else {
                     setMsg("No Host answers to that code. Try HOST-HORSERADISH, HOST-HOUSE, HOST-FLOOR, or HOST-LISTING.");
                 }
@@ -351,6 +382,7 @@
             el.hidden = el.getAttribute("data-trigger-extra") !== state.trigger;
         });
         paintCard();
+        paintSaveLabel();
     }
 
     function isBuilt() {
@@ -409,7 +441,8 @@
 
     function spec() {
         gather();
-        return {
+        const share = shareCode();
+        const host = {
             name: state.name || "Unnamed Host",
             body: state.body,
             prompt: state.prompt,
@@ -421,10 +454,23 @@
             phrase: state.phrase,
             page: state.page,
             portrait: state.portrait,
-            share: shareCode(),
+            share: share,
             peer: true,
             factory: "Horseradish Host Factory"
         };
+        if (state.editShare && state.editShare !== share) {
+            host.wasShare = state.editShare;
+        }
+        return host;
+    }
+
+    function paintSaveLabel() {
+        const btn = document.getElementById("save-factory");
+        if (!btn) {
+            return;
+        }
+        const signedIn = window.HorseradishLab && HorseradishLab.config().user;
+        btn.textContent = state.editShare ? "Save this Host" : (signedIn ? "Save to the Portal" : "Login to the portal");
     }
 
     function embedHtml(host) {
@@ -862,11 +908,26 @@
     render();
     renderBench();
 
-    const wake = new URLSearchParams(window.location.search).get("wake");
-    if (wake) {
-        if (shareIn) {
-            shareIn.value = wake;
+    const params = new URLSearchParams(window.location.search);
+    const edit = params.get("edit");
+    const wake = params.get("wake");
+    const open = edit || wake;
+    if (open && shareIn) {
+        shareIn.value = open;
+    }
+
+    function afterAuth() {
+        paintSaveLabel();
+        if (edit) {
+            applyPreset(edit, { edit: true });
+        } else if (wake) {
+            applyPreset(wake);
         }
-        applyPreset(wake);
+    }
+
+    if (window.HorseradishLab) {
+        HorseradishLab.load().then(afterAuth);
+    } else if (open) {
+        applyPreset(open, { edit: Boolean(edit) });
     }
 })();

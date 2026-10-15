@@ -9,7 +9,7 @@
     <meta name="description" content="The Horseradish Portal. Google gets you in. Your Host lives here.">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="shortcut icon" type="image/png" href="favicon.png">
-    <link rel="stylesheet" href="styles.css?v=portal-os">
+    <link rel="stylesheet" href="styles.css?v=portal-logout">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -69,14 +69,14 @@
                     <span class="presence-dot" aria-hidden="true"></span>
                     <span data-presence-short>Online</span>
                 </p>
-                <div class="os-user" id="lab-who" hidden>
+                <button type="button" class="os-user" id="lab-who" hidden aria-label="Log out of the Horseradish Portal" title="Log out">
                     <img class="os-face" id="os-face" alt="" hidden>
                     <span class="os-initials" id="os-initials" aria-hidden="true">HR</span>
                     <span class="os-user-copy">
                         <strong id="os-user-name">Operator</strong>
-                        <small id="os-user-role">Member</small>
+                        <small id="os-user-role">Log out</small>
                     </span>
-                </div>
+                </button>
             </header>
 
             <main id="main" class="os-main">
@@ -169,7 +169,7 @@
                         <div class="os-head">
                             <div>
                                 <h1>Hosts</h1>
-                                <p>Every Host on your shelf. Wake one, or swallow a share code.</p>
+                                <p>Every Host on your shelf. Edit one to rebuild it.</p>
                             </div>
                             <a class="os-create" href="index.html#factory">+ Create New Host</a>
                         </div>
@@ -207,7 +207,7 @@
                         <div class="os-head">
                             <div>
                                 <h1>Tasks</h1>
-                                <p>Wake a Host and send it to an asset. More task runs can land here.</p>
+                                <p>Edit a Host to rebuild it. More task runs can land here.</p>
                             </div>
                         </div>
                         <ul class="os-panel os-task-list" id="os-task-list"></ul>
@@ -217,7 +217,7 @@
                         <div class="os-head">
                             <div>
                                 <h1>Logs</h1>
-                                <p>What your Hosts have been doing.</p>
+                                <p>Timestamps of rebuilds and redeployments.</p>
                             </div>
                         </div>
                         <ul class="os-panel os-activity" id="os-logs"></ul>
@@ -264,7 +264,7 @@
     <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
-    <script src="lab-auth.js"></script>
-    <script src="lab.js?v=portal-os"></script>
+    <script src="lab-auth.js?v=host-logs"></script>
+    <script src="lab.js?v=portal-logout"></script>
 </body>
 </html>
