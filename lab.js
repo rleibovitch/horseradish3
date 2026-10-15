@@ -153,15 +153,19 @@
                 empty.textContent = result.message || "The shelf is not mounted yet.";
                 shelf.hidden = true;
                 buildBtn.textContent = "Build a Host";
-                return;
+                if (result.message) {
+                    showNote(result.message);
+                }
+                return false;
             }
+            showNote("");
             if (!hosts.length) {
                 paintHost(null);
                 empty.hidden = false;
                 empty.textContent = "No Host here yet. Go build one.";
                 shelf.hidden = true;
                 buildBtn.textContent = "Build a Host";
-                return;
+                return true;
             }
             empty.hidden = true;
             buildBtn.textContent = "Build another";
@@ -179,6 +183,7 @@
             } else {
                 shelf.hidden = true;
             }
+            return true;
         });
     }
 
@@ -193,10 +198,25 @@
             })
             : Promise.resolve();
         return go.then(function () {
-            door.hidden = true;
             floor.hidden = false;
             paintWho(Lab.config().user);
-            return paintFloor();
+            return paintFloor().then(function (opened) {
+                if (opened) {
+                    door.hidden = true;
+                    return;
+                }
+                door.hidden = false;
+                Lab.mountButton(googleSlot, function (result) {
+                    if (!result.ok) {
+                        showNote(result.message);
+                        return;
+                    }
+                    if (result.message) {
+                        showNote(result.message);
+                    }
+                    afterLogin();
+                });
+            });
         });
     }
 

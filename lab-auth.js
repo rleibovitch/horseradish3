@@ -84,6 +84,9 @@
         }
         if (!firebase.apps.length) {
             firebase.initializeApp(config.firebase);
+            if (firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
+                firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function () {});
+            }
         }
         return true;
     }
@@ -92,14 +95,31 @@
         if (!initFirebase()) {
             return Promise.resolve(null);
         }
-        if (firebase.auth().currentUser) {
-            return Promise.resolve(firebase.auth().currentUser);
+        const auth = firebase.auth();
+        if (auth.currentUser) {
+            return Promise.resolve(auth.currentUser);
+        }
+        if (typeof auth.authStateReady === "function") {
+            return auth.authStateReady().then(function () {
+                return auth.currentUser || null;
+            });
         }
         return new Promise(function (resolve) {
-            const unsub = firebase.auth().onAuthStateChanged(function (user) {
-                unsub();
+            let done = false;
+            function finish(user) {
+                if (done) {
+                    return;
+                }
+                done = true;
                 resolve(user || null);
+            }
+            const unsub = auth.onAuthStateChanged(function (user) {
+                unsub();
+                finish(user);
             });
+            setTimeout(function () {
+                finish(auth.currentUser);
+            }, 2500);
         });
     }
 
@@ -109,6 +129,12 @@
         }
         const cred = firebase.auth.GoogleAuthProvider.credential(credential);
         return firebase.auth().signInWithCredential(cred);
+    }
+
+    function firebaseMiss(err) {
+        const code = err && err.code ? String(err.code) : "";
+        const detail = code || (err && err.message) || "unknown";
+        return "Google is in. Firebase Auth did not take it (" + detail + "). Sign in once more.";
     }
 
     function login(credential) {
@@ -126,11 +152,12 @@
             return signInFirebase(credential).then(function () {
                 config.shelf = true;
                 return { ok: true, user: config.user };
-            }).catch(function () {
+            }).catch(function (err) {
                 return {
                     ok: true,
                     user: config.user,
-                    message: "Google is in. Enable Google sign-in in Firebase Auth so the shelf can open."
+                    needFirebase: true,
+                    message: firebaseMiss(err)
                 };
             });
         });
@@ -155,35 +182,22 @@
                 return { ok: false, needLogin: true };
             }
             return waitFirebaseUser().then(function (user) {
-                if (user) {
-                    const incoming = host || {};
-                    const ref = firebase.firestore().collection("lab").doc(user.uid);
-                    return ref.get().then(function (snap) {
-                        const hosts = snap.exists && Array.isArray(snap.data().hosts) ? snap.data().hosts : [];
-                        const next = hosts.filter(function (item) {
-                            return item.share !== incoming.share;
-                        });
-                        next.unshift(incoming);
-                        return ref.set({ hosts: next.slice(0, 24) });
-                    }).then(function () {
-                        return { ok: true, host: incoming };
-                    });
+                if (!user) {
+                    return { ok: false, needLogin: true, message: "Sign in once more so Firebase Auth can keep your Host." };
                 }
-                return fetchJSON("/api/lab-hosts", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ host: host })
-                }).then(function (res) {
-                    if (res.status === 401) {
-                        try {
-                            sessionStorage.setItem(PENDING_KEY, JSON.stringify(host));
-                        } catch (err) {}
-                        return { ok: false, needLogin: true };
-                    }
-                    if (!res.ok) {
-                        return { ok: false, message: (res.body && res.body.message) || "The Portal did not take it." };
-                    }
-                    return { ok: true, host: res.body.host };
+                const incoming = host || {};
+                const ref = firebase.firestore().collection("lab").doc(user.uid);
+                return ref.get().then(function (snap) {
+                    const hosts = snap.exists && Array.isArray(snap.data().hosts) ? snap.data().hosts : [];
+                    const next = hosts.filter(function (item) {
+                        return item.share !== incoming.share;
+                    });
+                    next.unshift(incoming);
+                    return ref.set({ hosts: next.slice(0, 24) });
+                }).then(function () {
+                    return { ok: true, host: incoming };
+                }).catch(function (err) {
+                    return { ok: false, message: firebaseMiss(err) };
                 });
             });
         });
@@ -201,17 +215,20 @@
 
     function list() {
         return waitFirebaseUser().then(function (user) {
-            if (user) {
-                return firebase.firestore().collection("lab").doc(user.uid).get().then(function (snap) {
-                    const hosts = snap.exists && Array.isArray(snap.data().hosts) ? snap.data().hosts : [];
-                    return { ok: true, hosts: hosts };
-                });
+            if (!user) {
+                return {
+                    ok: false,
+                    hosts: [],
+                    message: config.user
+                        ? "Sign in once more so Firebase Auth can open your Host."
+                        : "Enter the Portal first."
+                };
             }
-            return fetchJSON("/api/lab-hosts").then(function (res) {
-                if (!res.ok) {
-                    return { ok: false, hosts: [], message: res.body && res.body.message };
-                }
-                return { ok: true, hosts: res.body.hosts || [] };
+            return firebase.firestore().collection("lab").doc(user.uid).get().then(function (snap) {
+                const hosts = snap.exists && Array.isArray(snap.data().hosts) ? snap.data().hosts : [];
+                return { ok: true, hosts: hosts };
+            }).catch(function (err) {
+                return { ok: false, hosts: [], message: firebaseMiss(err) };
             });
         });
     }
@@ -232,19 +249,19 @@
 
     function forget(share) {
         return waitFirebaseUser().then(function (user) {
-            if (user) {
-                const key = String(share || "").toUpperCase();
-                const ref = firebase.firestore().collection("lab").doc(user.uid);
-                return ref.get().then(function (snap) {
-                    const hosts = snap.exists && Array.isArray(snap.data().hosts) ? snap.data().hosts : [];
-                    return ref.set({
-                        hosts: hosts.filter(function (item) {
-                            return String(item.share || "").toUpperCase() !== key;
-                        })
-                    });
-                });
+            if (!user) {
+                return { ok: false, message: "Sign in once more so Firebase Auth can open your Host." };
             }
-            return fetchJSON("/api/lab-hosts?share=" + encodeURIComponent(share), { method: "DELETE" });
+            const key = String(share || "").toUpperCase();
+            const ref = firebase.firestore().collection("lab").doc(user.uid);
+            return ref.get().then(function (snap) {
+                const hosts = snap.exists && Array.isArray(snap.data().hosts) ? snap.data().hosts : [];
+                return ref.set({
+                    hosts: hosts.filter(function (item) {
+                        return String(item.share || "").toUpperCase() !== key;
+                    })
+                });
+            });
         });
     }
 
