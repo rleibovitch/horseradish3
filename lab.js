@@ -6,185 +6,374 @@
 
     const door = document.getElementById("lab-door");
     const floor = document.getElementById("lab-floor");
-    const stage = document.getElementById("lab-stage");
-    const shelf = document.getElementById("lab-shelf");
-    const grid = document.getElementById("lab-grid");
     const empty = document.getElementById("lab-empty");
     const who = document.getElementById("lab-who");
     const note = document.getElementById("lab-note");
     const googleSlot = document.getElementById("google-slot");
-    const being = document.getElementById("host-being");
-    const portrait = document.getElementById("host-portrait");
-    const nameLive = document.getElementById("host-name-live");
-    const moodLive = document.getElementById("host-mood");
-    const shareLive = document.getElementById("host-share-live");
-    const wakeLine = document.getElementById("lab-wake-line");
     const buildBtn = document.getElementById("lab-build");
+    const fleetBody = document.getElementById("os-fleet");
+    const hostsBody = document.getElementById("os-hosts");
+    const activityList = document.getElementById("os-activity");
+    const logsList = document.getElementById("os-logs");
+    const taskList = document.getElementById("os-task-list");
+    const search = document.getElementById("os-search");
+    const menu = document.getElementById("os-menu");
+    const scrim = document.getElementById("os-scrim");
     let current = null;
     let hosts = [];
+    let query = "";
 
     function showNote(text) {
         note.textContent = text || "";
     }
 
-    function wakeCopy(host) {
+    function initials(name) {
+        const parts = String(name || "HR").trim().split(/\s+/);
+        return ((parts[0] || "H").charAt(0) + (parts[1] || "R").charAt(0)).toUpperCase();
+    }
+
+    function roleOf(host) {
+        return host.specialty || (host.body ? host.body.charAt(0).toUpperCase() + host.body.slice(1) + " Host" : "Host");
+    }
+
+    function statusOf(host) {
+        const knows = Boolean(host.specialty || host.fileName || host.site);
+        if (!knows) {
+            return "offline";
+        }
+        if (host.trigger === "phrase" || host.trigger === "page") {
+            return "idle";
+        }
+        return "active";
+    }
+
+    function statusLabel(status) {
+        if (status === "active") {
+            return "Active";
+        }
+        if (status === "idle") {
+            return "Idle";
+        }
+        return "Offline";
+    }
+
+    function isDeployed(host) {
+        return Boolean(host.site || host.fileName);
+    }
+
+    function ago(fromIso) {
+        const then = new Date(fromIso);
+        if (Number.isNaN(then.getTime())) {
+            return "just now";
+        }
+        const minutes = Math.max(0, Math.round((Date.now() - then.getTime()) / 60000));
+        if (minutes < 1) {
+            return "just now";
+        }
+        if (minutes === 1) {
+            return "1 min ago";
+        }
+        if (minutes < 60) {
+            return minutes + " mins ago";
+        }
+        const hours = Math.round(minutes / 60);
+        if (hours === 1) {
+            return "1 hour ago";
+        }
+        if (hours < 48) {
+            return hours + " hours ago";
+        }
+        const days = Math.round(hours / 24);
+        return days === 1 ? "1 day ago" : days + " days ago";
+    }
+
+    function activityCopy(host) {
+        if (host.site) {
+            return host.name + " is placed on " + host.site + ".";
+        }
+        if (host.fileName) {
+            return host.name + " holds " + host.fileName + ".";
+        }
         if (host.trigger === "phrase" && host.phrase) {
-            return "Wakes on \"" + host.phrase + "\".";
+            return host.name + " waits for \"" + host.phrase + "\".";
         }
         if (host.trigger === "page" && host.page) {
-            return "Wakes on " + host.page + ".";
+            return host.name + " wakes on " + host.page + ".";
         }
-        return "Always-on. Quiet until you need it.";
+        return host.name + " is on your shelf.";
     }
 
-    function paintHost(host) {
-        current = host || null;
-        if (!host) {
-            stage.hidden = true;
-            return;
+    function matches(host) {
+        if (!query) {
+            return true;
         }
-        stage.hidden = false;
-        const dock = document.getElementById("host-dock");
-        if (dock) {
-            dock.classList.add("in-view");
-            dock.style.opacity = "1";
-        }
-        being.dataset.body = host.body || "square";
-        being.dataset.stage = host.trigger === "always" || !host.trigger ? "always" : "conditional";
-        being.classList.add("is-painted");
-        being.classList.toggle("has-knowledge", Boolean(host.specialty || host.fileName || host.site));
-        being.classList.toggle("has-portrait", Boolean(host.portrait));
-        nameLive.textContent = host.name || "Unnamed";
-        moodLive.textContent = host.specialty || "I'm your Host.";
-        shareLive.textContent = host.share || "";
-        wakeLine.textContent = wakeCopy(host);
-        being.querySelectorAll("[data-kit]").forEach(function (el) {
-            el.classList.add("is-on");
-        });
-        if (host.portrait) {
-            portrait.src = host.portrait;
-            portrait.hidden = false;
-        } else {
-            portrait.removeAttribute("src");
-            portrait.hidden = true;
-        }
-        if (grid) {
-            grid.querySelectorAll(".lab-card").forEach(function (el) {
-                el.classList.toggle("is-current", el.getAttribute("data-share") === host.share);
-            });
-        }
+        const blob = [host.name, host.share, host.specialty, host.body, host.site, host.fileName].join(" ").toLowerCase();
+        return blob.indexOf(query) >= 0;
     }
 
-    function card(host) {
-        const el = document.createElement("article");
-        el.className = "stamp lab-card";
-        el.setAttribute("data-share", host.share || "");
-        if (current && host.share === current.share) {
-            el.classList.add("is-current");
-        }
-
-        const preview = document.createElement("div");
-        preview.className = "plant-preview";
-        preview.setAttribute("data-body", host.body || "square");
-
-        const shape = document.createElement("span");
-        shape.className = "plant-shape";
-        shape.setAttribute("aria-hidden", "true");
-
-        const copy = document.createElement("div");
-        const kicker = document.createElement("p");
-        kicker.className = "share-kicker";
-        kicker.textContent = host.share || "";
-        const name = document.createElement("p");
-        name.className = "plant-name";
-        name.textContent = host.name || "Unnamed Host";
-        const specialty = document.createElement("p");
-        specialty.className = "plant-specialty";
-        specialty.textContent = host.specialty || "";
-        copy.appendChild(kicker);
-        copy.appendChild(name);
-        copy.appendChild(specialty);
-
-        preview.appendChild(shape);
-        preview.appendChild(copy);
-        el.appendChild(preview);
-        el.addEventListener("click", function () {
-            paintHost(host);
-        });
+    function mark(host) {
+        const el = document.createElement("span");
+        el.className = "os-host-mark";
+        el.setAttribute("data-body", host.body || "square");
+        el.textContent = String(host.name || "H").charAt(0).toUpperCase();
         return el;
     }
 
+    function hostCell(host) {
+        const wrap = document.createElement("div");
+        wrap.className = "os-host";
+        wrap.appendChild(mark(host));
+        const copy = document.createElement("div");
+        const name = document.createElement("strong");
+        name.textContent = host.name || "Unnamed Host";
+        const id = document.createElement("small");
+        id.textContent = "ID: " + (host.share || "HOST-UNNAMED");
+        copy.appendChild(name);
+        copy.appendChild(id);
+        wrap.appendChild(copy);
+        return wrap;
+    }
+
+    function row(host) {
+        const tr = document.createElement("tr");
+        const status = statusOf(host);
+
+        const details = document.createElement("td");
+        details.appendChild(hostCell(host));
+
+        const role = document.createElement("td");
+        role.className = "os-role";
+        role.textContent = roleOf(host);
+
+        const state = document.createElement("td");
+        const pill = document.createElement("span");
+        pill.className = "os-status is-" + status;
+        pill.textContent = statusLabel(status);
+        state.appendChild(pill);
+
+        const actions = document.createElement("td");
+        const box = document.createElement("div");
+        box.className = "os-actions";
+        const wake = document.createElement("button");
+        wake.type = "button";
+        wake.className = "os-mini";
+        wake.textContent = "Wake";
+        wake.addEventListener("click", function () {
+            Lab.wake(host);
+        });
+        const release = document.createElement("button");
+        release.type = "button";
+        release.className = "os-mini";
+        release.textContent = "Release";
+        release.addEventListener("click", function () {
+            current = host.share === (current && current.share) ? null : current;
+            Lab.forget(host.share).then(function () {
+                paintFloor();
+            });
+        });
+        box.appendChild(wake);
+        box.appendChild(release);
+        actions.appendChild(box);
+
+        tr.appendChild(details);
+        tr.appendChild(role);
+        tr.appendChild(state);
+        tr.appendChild(actions);
+        return tr;
+    }
+
+    function fillTable(tbody, list) {
+        if (!tbody) {
+            return;
+        }
+        tbody.innerHTML = "";
+        list.forEach(function (host) {
+            tbody.appendChild(row(host));
+        });
+    }
+
+    function fillActivity(el, list) {
+        if (!el) {
+            return;
+        }
+        el.innerHTML = "";
+        if (!list.length) {
+            const item = document.createElement("li");
+            item.textContent = "No activity yet. Build a Host and it will show here.";
+            el.appendChild(item);
+            return;
+        }
+        list.slice(0, 8).forEach(function (host) {
+            const item = document.createElement("li");
+            const dot = document.createElement("span");
+            dot.className = "os-dot is-" + statusOf(host);
+            const copy = document.createElement("div");
+            copy.appendChild(document.createTextNode(activityCopy(host)));
+            const time = document.createElement("time");
+            time.textContent = ago(host.savedAt);
+            copy.appendChild(time);
+            item.appendChild(dot);
+            item.appendChild(copy);
+            el.appendChild(item);
+        });
+    }
+
+    function fillTasks(list) {
+        if (!taskList) {
+            return;
+        }
+        taskList.innerHTML = "";
+        if (!list.length) {
+            const item = document.createElement("li");
+            item.textContent = "No tasks yet. Place a Host on an asset, or wake one from the fleet.";
+            taskList.appendChild(item);
+            return;
+        }
+        list.forEach(function (host) {
+            const item = document.createElement("li");
+            const copy = document.createElement("div");
+            const name = document.createElement("strong");
+            name.textContent = host.name || "Unnamed Host";
+            const meta = document.createElement("p");
+            meta.className = "os-hint";
+            meta.textContent = isDeployed(host)
+                ? "Placed on an asset."
+                : "Waiting to be placed.";
+            copy.appendChild(name);
+            copy.appendChild(meta);
+            const wake = document.createElement("button");
+            wake.type = "button";
+            wake.className = "os-mini";
+            wake.textContent = "Wake";
+            wake.addEventListener("click", function () {
+                Lab.wake(host);
+            });
+            item.appendChild(copy);
+            item.appendChild(wake);
+            taskList.appendChild(item);
+        });
+    }
+
     function paintWho(user) {
-        who.innerHTML = "";
+        const face = document.getElementById("os-face");
+        const initialsEl = document.getElementById("os-initials");
+        const nameEl = document.getElementById("os-user-name");
+        const roleEl = document.getElementById("os-user-role");
+        const perm = document.getElementById("os-perm-who");
         if (!user) {
             who.hidden = true;
             return;
         }
         who.hidden = false;
-        if (user.picture) {
-            const img = document.createElement("img");
-            img.src = user.picture;
-            img.alt = "";
-            img.className = "lab-face";
-            who.appendChild(img);
+        if (user.picture && face) {
+            face.src = user.picture;
+            face.hidden = false;
+            if (initialsEl) {
+                initialsEl.hidden = true;
+            }
+        } else {
+            if (face) {
+                face.hidden = true;
+            }
+            if (initialsEl) {
+                initialsEl.hidden = false;
+                initialsEl.textContent = initials(user.name || user.email);
+            }
         }
-        const name = document.createElement("p");
-        name.textContent = user.name || user.email;
-        who.appendChild(name);
-        const out = document.createElement("button");
-        out.type = "button";
-        out.className = "text-chip";
-        out.textContent = "Leave the Portal";
-        out.addEventListener("click", function () {
-            Lab.logout().then(function () {
-                window.location.reload();
-            });
-        });
-        who.appendChild(out);
+        if (nameEl) {
+            nameEl.textContent = user.name || user.email || "Operator";
+        }
+        if (roleEl) {
+            roleEl.textContent = "Member";
+        }
+        if (perm) {
+            perm.textContent = (user.name || user.email) + " holds this door.";
+        }
     }
 
     function paintFloor() {
         return Lab.list().then(function (result) {
-            grid.innerHTML = "";
             hosts = result.ok ? result.hosts || [] : [];
+            const shown = hosts.filter(matches);
+            const active = hosts.filter(function (host) {
+                return statusOf(host) === "active";
+            }).length;
+            const tasks = hosts.filter(isDeployed).length;
+
+            document.getElementById("os-total").textContent = String(hosts.length);
+            document.getElementById("os-active").textContent = String(active);
+            document.getElementById("os-tasks").textContent = String(tasks);
+            document.getElementById("os-total-meta").textContent = hosts.length === 1 ? "on this shelf" : "on this shelf";
+            document.getElementById("os-active-meta").textContent = active ? "Online currently running" : "none currently running";
+            document.getElementById("os-tasks-meta").textContent = tasks === 1 ? "placed on an asset" : "placed on an asset";
+
             if (!result.ok) {
-                paintHost(null);
+                current = null;
                 empty.hidden = false;
                 empty.textContent = result.message || "The shelf is not mounted yet.";
-                shelf.hidden = true;
-                buildBtn.textContent = "Build a Host";
+                fillTable(fleetBody, []);
+                fillTable(hostsBody, []);
+                fillActivity(activityList, []);
+                fillActivity(logsList, []);
+                fillTasks([]);
+                if (buildBtn) {
+                    buildBtn.textContent = "+ Create New Host";
+                }
                 if (result.message) {
                     showNote(result.message);
                 }
                 return false;
             }
+
             showNote("");
             if (!hosts.length) {
-                paintHost(null);
+                current = null;
                 empty.hidden = false;
                 empty.textContent = "No Host here yet. Go build one.";
-                shelf.hidden = true;
-                buildBtn.textContent = "Build a Host";
-                return true;
-            }
-            empty.hidden = true;
-            buildBtn.textContent = "Build another";
-            const shown = current && hosts.some(function (host) {
-                return host.share === current.share;
-            }) ? hosts.find(function (host) {
-                return host.share === current.share;
-            }) : hosts[0];
-            paintHost(shown);
-            if (hosts.length > 1) {
-                shelf.hidden = false;
-                hosts.forEach(function (host) {
-                    grid.appendChild(card(host));
-                });
             } else {
-                shelf.hidden = true;
+                empty.hidden = true;
+                current = shown[0] || hosts[0];
             }
+
+            fillTable(fleetBody, shown);
+            fillTable(hostsBody, shown);
+            fillActivity(activityList, shown.length ? shown : hosts);
+            fillActivity(logsList, hosts);
+            fillTasks(shown.length ? shown : hosts);
             return true;
         });
+    }
+
+    function showView(name) {
+        document.querySelectorAll(".os-view").forEach(function (view) {
+            view.hidden = view.getAttribute("data-view") !== name;
+        });
+        document.querySelectorAll("[data-os-view]").forEach(function (btn) {
+            btn.classList.toggle("is-on", btn.getAttribute("data-os-view") === name);
+        });
+        closeRail();
+    }
+
+    function openRail() {
+        document.body.classList.add("is-rail");
+        if (menu) {
+            menu.setAttribute("aria-expanded", "true");
+            menu.setAttribute("aria-label", "Close menu");
+        }
+        if (scrim) {
+            scrim.hidden = false;
+        }
+    }
+
+    function closeRail() {
+        document.body.classList.remove("is-rail");
+        if (menu) {
+            menu.setAttribute("aria-expanded", "false");
+            menu.setAttribute("aria-label", "Open menu");
+        }
+        if (scrim) {
+            scrim.hidden = true;
+        }
     }
 
     function afterLogin() {
@@ -242,29 +431,55 @@
             if (!chip) {
                 return;
             }
-            const preset = chip.getAttribute("data-preset");
-            if (shareIn) {
-                shareIn.value = preset;
-            }
-            wakeCode(preset);
+            wakeCode(chip.getAttribute("data-preset"));
         });
     }
 
-    document.getElementById("lab-wake").addEventListener("click", function () {
-        if (current) {
-            Lab.wake(current);
-        }
-    });
-    document.getElementById("lab-release").addEventListener("click", function () {
-        if (!current) {
-            return;
-        }
-        const share = current.share;
-        current = null;
-        Lab.forget(share).then(function () {
-            paintFloor();
+    document.querySelectorAll("[data-os-view]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            showView(btn.getAttribute("data-os-view"));
         });
     });
+
+    if (search) {
+        search.addEventListener("input", function () {
+            query = String(search.value || "").trim().toLowerCase();
+            const shown = hosts.filter(matches);
+            fillTable(fleetBody, shown);
+            fillTable(hostsBody, shown);
+            fillTasks(shown);
+            if (query) {
+                showView("hosts");
+            }
+        });
+    }
+
+    if (menu) {
+        menu.addEventListener("click", function () {
+            if (document.body.classList.contains("is-rail")) {
+                closeRail();
+            } else {
+                openRail();
+            }
+        });
+    }
+    if (scrim) {
+        scrim.addEventListener("click", closeRail);
+    }
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+            closeRail();
+        }
+    });
+
+    const leave = document.getElementById("os-leave");
+    if (leave) {
+        leave.addEventListener("click", function () {
+            Lab.logout().then(function () {
+                window.location.reload();
+            });
+        });
+    }
 
     Lab.load().then(function (cfg) {
         if (cfg.user) {
@@ -279,8 +494,5 @@
             }
             afterLogin();
         });
-        if (!cfg.clientId) {
-            showNote("");
-        }
     });
 })();

@@ -9,146 +9,262 @@
     <meta name="description" content="The Horseradish Portal. Google gets you in. Your Host lives here.">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="shortcut icon" type="image/png" href="favicon.png">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=portal-os">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
-<body>
+<body class="os-body">
     <a class="skip-link" href="#main">Skip to content</a>
 
-    <header class="nav-wrap">
-        <nav class="navbar" aria-label="Main">
-            <a class="nav-logo" href="index.html">
-                <img src="horseradish.png" alt="" class="logo-img">
+    <div class="os-app">
+        <aside class="os-rail" id="os-rail">
+            <a class="os-brand" href="index.html">
+                <img src="horseradish.png" alt="" class="os-brand-mark">
                 <span>Horseradish</span>
             </a>
-            <button class="hamburger-menu" type="button" aria-expanded="false" aria-controls="nav-menu" aria-label="Open menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <ul class="nav-menu" id="nav-menu">
-                <li><a href="index.html" class="nav-link">Home</a></li>
-                <li><a href="lab.html" class="nav-link" aria-current="page">Portal</a></li>
-                <li><a href="contact.html" class="nav-link">Contact</a></li>
-                <li>
-                    <a href="contact.html" class="presence is-online" data-presence>
-                        <span class="presence-dot" aria-hidden="true"></span>
-                        <span data-presence-short>Online</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </header>
+            <nav class="os-nav" aria-label="Portal">
+                <button type="button" class="os-nav-btn is-on" data-os-view="dashboard">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z" fill="currentColor"/></svg>
+                    Dashboard
+                </button>
+                <button type="button" class="os-nav-btn" data-os-view="hosts">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm-7 9v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z" fill="currentColor"/></svg>
+                    Hosts
+                </button>
+                <button type="button" class="os-nav-btn" data-os-view="tasks">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8M4 6h4M4 12h4M4 18h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Tasks
+                </button>
+                <button type="button" class="os-nav-btn" data-os-view="logs">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v14H5V5zm3 4h8M8 12h8M8 15h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    Logs
+                </button>
+            </nav>
+            <p class="os-rail-label">Configuration</p>
+            <nav class="os-nav" aria-label="Configuration">
+                <button type="button" class="os-nav-btn" data-os-view="settings">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7zM19.4 13a7.7 7.7 0 0 0 .1-2l2-1.5-2-3.5-2.4 1a7.8 7.8 0 0 0-1.7-1L15 4h-6l-.4 2.5a7.8 7.8 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a7.7 7.7 0 0 0 .1 2l-2 1.5 2 3.5 2.4-1a7.8 7.8 0 0 0 1.7 1L9 20h6l.4-2.5a7.8 7.8 0 0 0 1.7-1l2.4 1 2-3.5z" fill="currentColor"/></svg>
+                    Settings
+                </button>
+                <button type="button" class="os-nav-btn" data-os-view="permissions">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v6c0 5-3.4 7.8-8 9-4.6-1.2-8-4-8-9V7l8-4z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                    Permissions
+                </button>
+            </nav>
+            <a class="os-rail-home" href="index.html">Home</a>
+        </aside>
 
-    <main id="main" class="lab-page">
-        <section class="hero lab-hero">
-            <p class="num" aria-hidden="true">PORTAL</p>
-            <p class="eyebrow">The Portal</p>
-            <h1>The Portal.</h1>
-            <p class="lede hero-lede">This is where your Host lives. Login, and it shows itself.</p>
-            <div class="lab-who" id="lab-who" hidden></div>
-            <p class="presence hero-presence is-online" data-presence>
-                <span class="presence-dot" aria-hidden="true"></span>
-                <span data-presence-label>Horseradish is online.</span>
-            </p>
-        </section>
+        <div class="os-shell">
+            <header class="os-top">
+                <button type="button" class="os-menu" id="os-menu" aria-expanded="false" aria-controls="os-rail" aria-label="Open menu">
+                    <span></span><span></span><span></span>
+                </button>
+                <label class="os-search">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm10 2l-4.3-4.3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    <input id="os-search" type="search" placeholder="Search hosts, tasks..." autocomplete="off">
+                </label>
+                <p class="presence os-presence is-online" data-presence>
+                    <span class="presence-dot" aria-hidden="true"></span>
+                    <span data-presence-short>Online</span>
+                </p>
+                <div class="os-user" id="lab-who" hidden>
+                    <img class="os-face" id="os-face" alt="" hidden>
+                    <span class="os-initials" id="os-initials" aria-hidden="true">HR</span>
+                    <span class="os-user-copy">
+                        <strong id="os-user-name">Operator</strong>
+                        <small id="os-user-role">Member</small>
+                    </span>
+                </div>
+            </header>
 
-        <section class="lab-body">
-            <div class="container">
-                <div class="stamp lab-door" id="lab-door">
-                    <p class="agent-kicker">Enter Horseradish</p>
-                    <h2>Sign in with Google.</h2>
-                    <p class="step-copy">The Portal shows you your Host. Copying and the ZIP stay free. Saving is a login.</p>
+            <main id="main" class="os-main">
+                <p class="os-note" id="lab-note" role="status"></p>
+
+                <div class="os-login" id="lab-door">
+                    <p class="os-kicker">Enter Horseradish</p>
+                    <h1>Sign in with Google.</h1>
+                    <p>The Portal shows you your Host. Copying and the ZIP stay free. Saving is a login.</p>
                     <div id="google-slot" class="google-slot"></div>
-                    <p class="field-hint"><a href="index.html#factory">Or go build first.</a></p>
+                    <p class="os-login-hint"><a href="index.html#factory">Or go build first.</a></p>
                 </div>
 
-                <p class="output-msg" id="lab-note" role="status"></p>
-
-                <div class="lab-floor" id="lab-floor" hidden>
-                    <div class="lab-stage" id="lab-stage" hidden>
-                        <aside class="host-dock stamp" id="host-dock">
-                            <p class="agent-kicker">Your Host</p>
-                            <div class="host-being" id="host-being" data-body="square" data-stage="always">
-                                <div class="host-aura" aria-hidden="true"></div>
-                                <div class="host-figure">
-                                    <div class="host-shape">
-                                        <img class="host-portrait" id="host-portrait" alt="" hidden>
-                                        <span class="host-face" aria-hidden="true">
-                                            <span class="host-eye left"></span>
-                                            <span class="host-eye right"></span>
-                                            <span class="host-mouth"></span>
-                                        </span>
-                                    </div>
-                                    <div class="host-torso" aria-hidden="true"></div>
-                                </div>
-                                <p class="host-name" id="host-name-live">Unnamed</p>
-                                <p class="host-mood" id="host-mood">I'm your Host.</p>
-                                <ul class="host-kit">
-                                    <li data-kit="build">Build</li>
-                                    <li data-kit="brain">Brain</li>
-                                    <li data-kit="deploy">Deploy</li>
-                                </ul>
-                                <p class="host-share" id="host-share-live"></p>
+                <div class="os-floor" id="lab-floor" hidden>
+                    <section class="os-view" data-view="dashboard">
+                        <div class="os-head">
+                            <div>
+                                <h1>Dashboard</h1>
+                                <p>Overview of your Hosts and active operations.</p>
                             </div>
-                        </aside>
-                        <p class="lab-wake-line" id="lab-wake-line"></p>
-                        <div class="lab-host-actions">
-                            <button type="button" class="mini-stamp" id="lab-wake">Wake</button>
-                            <button type="button" class="text-chip" id="lab-release">Release</button>
+                            <a class="os-create" id="lab-build" href="index.html#factory">+ Create New Host</a>
                         </div>
-                    </div>
 
-                    <p class="lab-empty" id="lab-empty" hidden>No Host here yet. Go build one.</p>
-                    <a class="stamp-btn" id="lab-build" href="index.html#factory">Build a Host</a>
-
-                    <form class="p2p-bar stamp" id="p2p-form">
-                        <p class="eyebrow">Share</p>
-                        <h2>Got a share code?</h2>
-                        <label class="field-label" for="share-in">Share code</label>
-                        <div class="p2p-row">
-                            <input id="share-in" name="shareIn" type="text" spellcheck="false" placeholder="HOST-HORSERADISH" autocomplete="off">
-                            <button type="submit" class="mini-stamp">Wake it</button>
+                        <div class="os-stats">
+                            <article class="os-stat">
+                                <div>
+                                    <p class="os-stat-label">Total Hosts</p>
+                                    <p class="os-stat-value" id="os-total">0</p>
+                                    <p class="os-stat-meta" id="os-total-meta">on this shelf</p>
+                                </div>
+                                <span class="os-stat-icon is-blue" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><path d="M7 7h10v10H7V7zm3-3h4v3h-4V4zM5 17h14v3H5v-3z" fill="currentColor"/></svg>
+                                </span>
+                            </article>
+                            <article class="os-stat">
+                                <div>
+                                    <p class="os-stat-label">Active Hosts</p>
+                                    <p class="os-stat-value" id="os-active">0</p>
+                                    <p class="os-stat-meta is-live" id="os-active-meta">Online currently running</p>
+                                </div>
+                                <span class="os-stat-icon is-green" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 10-14h-7l0-6z" fill="currentColor"/></svg>
+                                </span>
+                            </article>
+                            <article class="os-stat">
+                                <div>
+                                    <p class="os-stat-label">Tasks Completed</p>
+                                    <p class="os-stat-value" id="os-tasks">0</p>
+                                    <p class="os-stat-meta" id="os-tasks-meta">placed on an asset</p>
+                                </div>
+                                <span class="os-stat-icon is-purple" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><path d="M9 16.2l-3.5-3.5L4 14.2 9 19l12-12-1.5-1.5z" fill="currentColor"/></svg>
+                                </span>
+                            </article>
                         </div>
-                        <p class="field-hint">Peer to peer. A Host swallows a code and inherits the specialty. Try <button type="button" class="text-chip" data-preset="HOST-HORSERADISH">HOST-HORSERADISH</button>, <button type="button" class="text-chip" data-preset="HOST-HOUSE">HOST-HOUSE</button>, <button type="button" class="text-chip" data-preset="HOST-FLOOR">HOST-FLOOR</button>, or <button type="button" class="text-chip" data-preset="HOST-LISTING">HOST-LISTING</button>.</p>
-                    </form>
 
-                    <div class="lab-shelf" id="lab-shelf" hidden>
-                        <p class="eyebrow">Your shelf</p>
-                        <h2>More Hosts</h2>
-                        <p class="lede host-lede">These are yours too. Tap one to show it.</p>
-                        <div class="lab-grid" id="lab-grid"></div>
-                    </div>
+                        <div class="os-split">
+                            <section class="os-panel">
+                                <div class="os-panel-head">
+                                    <h2>Active Fleet</h2>
+                                    <button type="button" class="os-text-link" data-os-view="hosts">View All</button>
+                                </div>
+                                <p class="os-empty" id="lab-empty" hidden>No Host here yet. Go build one.</p>
+                                <div class="os-table-wrap">
+                                    <table class="os-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Host Details</th>
+                                                <th>Role</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="os-fleet"></tbody>
+                                    </table>
+                                </div>
+                            </section>
+
+                            <section class="os-panel os-activity-panel">
+                                <div class="os-panel-head">
+                                    <h2>Recent Activity</h2>
+                                    <button type="button" class="os-text-link" data-os-view="logs">View Full Logs</button>
+                                </div>
+                                <ul class="os-activity" id="os-activity"></ul>
+                            </section>
+                        </div>
+                    </section>
+
+                    <section class="os-view" data-view="hosts" hidden>
+                        <div class="os-head">
+                            <div>
+                                <h1>Hosts</h1>
+                                <p>Every Host on your shelf. Wake one, or swallow a share code.</p>
+                            </div>
+                            <a class="os-create" href="index.html#factory">+ Create New Host</a>
+                        </div>
+                        <div class="os-table-wrap os-panel">
+                            <table class="os-table">
+                                <thead>
+                                    <tr>
+                                        <th>Host Details</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="os-hosts"></tbody>
+                            </table>
+                        </div>
+                        <form class="os-panel os-share" id="p2p-form">
+                            <p class="os-kicker">Share</p>
+                            <h2>Got a share code?</h2>
+                            <label class="os-field-label" for="share-in">Share code</label>
+                            <div class="os-share-row">
+                                <input id="share-in" name="shareIn" type="text" spellcheck="false" placeholder="HOST-HORSERADISH" autocomplete="off">
+                                <button type="submit" class="os-create">Wake it</button>
+                            </div>
+                            <p class="os-hint">Peer to peer. A Host swallows a code and inherits the specialty. Try
+                                <button type="button" class="os-chip" data-preset="HOST-HORSERADISH">HOST-HORSERADISH</button>,
+                                <button type="button" class="os-chip" data-preset="HOST-HOUSE">HOST-HOUSE</button>,
+                                <button type="button" class="os-chip" data-preset="HOST-FLOOR">HOST-FLOOR</button>,
+                                or <button type="button" class="os-chip" data-preset="HOST-LISTING">HOST-LISTING</button>.
+                            </p>
+                        </form>
+                    </section>
+
+                    <section class="os-view" data-view="tasks" hidden>
+                        <div class="os-head">
+                            <div>
+                                <h1>Tasks</h1>
+                                <p>Wake a Host and send it to an asset. More task runs can land here.</p>
+                            </div>
+                        </div>
+                        <ul class="os-panel os-task-list" id="os-task-list"></ul>
+                    </section>
+
+                    <section class="os-view" data-view="logs" hidden>
+                        <div class="os-head">
+                            <div>
+                                <h1>Logs</h1>
+                                <p>What your Hosts have been doing.</p>
+                            </div>
+                        </div>
+                        <ul class="os-panel os-activity" id="os-logs"></ul>
+                    </section>
+
+                    <section class="os-view" data-view="settings" hidden>
+                        <div class="os-head">
+                            <div>
+                                <h1>Settings</h1>
+                                <p>This machine, this login.</p>
+                            </div>
+                        </div>
+                        <div class="os-panel os-settings">
+                            <p>The Host factory is Home. This Portal is the shelf.</p>
+                            <p class="presence is-online" data-presence>
+                                <span class="presence-dot" aria-hidden="true"></span>
+                                <span data-presence-label>Horseradish is online.</span>
+                            </p>
+                            <button type="button" class="os-ghost" id="os-leave">Leave the Portal</button>
+                        </div>
+                    </section>
+
+                    <section class="os-view" data-view="permissions" hidden>
+                        <div class="os-head">
+                            <div>
+                                <h1>Permissions</h1>
+                                <p>Google gets you in. Firestore keeps the Host under your uid.</p>
+                            </div>
+                        </div>
+                        <div class="os-panel os-settings">
+                            <p>Saving is a login. The ZIP and a copy stay free.</p>
+                            <p>Your Hosts live in <code>lab/{your uid}</code>. Nobody else can read that shelf.</p>
+                            <p id="os-perm-who">Sign in to see who holds this door.</p>
+                        </div>
+                    </section>
                 </div>
-            </div>
-        </section>
-    </main>
+            </main>
+        </div>
+    </div>
 
-    <footer class="footer">
-        <div class="container footer-content">
-            <p>Horseradish Host Factory. We code Hosts.</p>
-            <ul>
-                <li><a href="index.html">Home</a></li>
-                <li><a href="lab.html">Portal</a></li>
-                <li><a href="index.html#host">The Host</a></li>
-                <li><a href="contact.html">Contact</a></li>
-                <li><a href="contact.html" class="presence is-online" data-presence><span class="presence-dot" aria-hidden="true"></span><span data-presence-short>Online</span></a></li>
-                <li><a href="https://www.linkedin.com/company/104984695/admin/dashboard/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
-            </ul>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 Horseradish.</p>
-        </div>
-    </footer>
+    <div class="os-scrim" id="os-scrim" hidden></div>
 
     <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
     <script src="lab-auth.js"></script>
-    <script src="lab.js"></script>
+    <script src="lab.js?v=portal-os"></script>
 </body>
 </html>
