@@ -133,20 +133,14 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function loadPresence() {
-        fetch("/api/presence", { cache: "no-store", credentials: "same-origin" })
+        const local = location.hostname === "127.0.0.1" || location.hostname === "localhost";
+        const url = local ? "/api/presence" : "operator.json";
+        fetch(url, { cache: "no-store", credentials: "same-origin" })
             .then(function (res) {
                 if (!res.ok) {
                     throw new Error("presence");
                 }
                 return res.json();
-            })
-            .catch(function () {
-                return fetch("operator.json", { cache: "no-store" }).then(function (res) {
-                    if (!res.ok) {
-                        throw new Error("presence");
-                    }
-                    return res.json();
-                });
             })
             .then(applyPresence)
             .catch(function () {
