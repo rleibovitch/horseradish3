@@ -35,7 +35,7 @@ export default {
             return json({ message: "The Google lock is not hung yet." }, 503);
         }
         if (!sessionSecret()) {
-            return json({ message: "The Lab has no session key yet." }, 503);
+            return json({ message: "The Portal has no session key yet." }, 503);
         }
 
         let body = {};

@@ -37,7 +37,7 @@
         if (!config.clientId) {
             const hint = document.createElement("p");
             hint.className = "field-hint";
-            hint.textContent = "The Lab door is cut. Hang the Google lock, then this button appears.";
+            hint.textContent = "The Portal door is cut. Hang the Google lock, then this button appears.";
             el.appendChild(hint);
             return;
         }
@@ -181,7 +181,7 @@
                         return { ok: false, needLogin: true };
                     }
                     if (!res.ok) {
-                        return { ok: false, message: (res.body && res.body.message) || "The Lab did not take it." };
+                        return { ok: false, message: (res.body && res.body.message) || "The Portal did not take it." };
                     }
                     return { ok: true, host: res.body.host };
                 });
@@ -261,7 +261,7 @@
 
     function stayOnFactory() {
         const hash = root.location.hash;
-        if (hash === "#factory" || hash === "#host" || hash === "#questions" || hash === "#contact") {
+        if (hash === "#factory" || hash === "#host") {
             return true;
         }
         return Boolean(new URLSearchParams(root.location.search).get("wake"));

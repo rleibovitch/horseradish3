@@ -1,14 +1,14 @@
 import { cleanHost, json, loadShelf, readUser, writeShelf } from "../lib/lab.js";
 
 function shelfMessage() {
-    return "The Lab door opens. Firestore still needs Firebase Auth, not a JSON key.";
+    return "The Portal door opens. Firestore still needs Firebase Auth, not a JSON key.";
 }
 
 export default {
     async fetch(request) {
         const user = readUser(request);
         if (!user) {
-            return json({ message: "Enter the Lab first." }, 401);
+            return json({ message: "Enter the Portal first." }, 401);
         }
 
         const method = request.method.toUpperCase();
@@ -62,7 +62,7 @@ export default {
             if (err && (err.code === "shelf" || err.message === "shelf" || err.message === "shelf-put")) {
                 return json({ message: shelfMessage(), hosts: [] }, 503);
             }
-            return json({ message: "The Lab missed." }, 500);
+            return json({ message: "The Portal missed." }, 500);
         }
     }
 };

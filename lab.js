@@ -134,7 +134,7 @@
         const out = document.createElement("button");
         out.type = "button";
         out.className = "text-chip";
-        out.textContent = "Leave the Lab";
+        out.textContent = "Leave the Portal";
         out.addEventListener("click", function () {
             Lab.logout().then(function () {
                 window.location.reload();

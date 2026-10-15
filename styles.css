@@ -162,8 +162,9 @@ h3 {
 }
 
 .logo-img {
-    height: 30px;
+    height: 42px;
     width: auto;
+    display: block;
 }
 
 .nav-menu {
@@ -271,7 +272,6 @@ body:has(.greet) {
 
 .factory,
 .agents,
-.questions,
 .contact {
     background:
         radial-gradient(circle at 12% 18%, rgba(0, 146, 162, 0.08), transparent 28%),
@@ -427,9 +427,7 @@ button.stamp-btn.ghost {
 }
 
 .agents,
-.question,
 .factory,
-.questions,
 .contact {
     padding: 36px 0 72px;
     position: relative;
@@ -1027,9 +1025,7 @@ button.stamp-btn.ghost {
 }
 
 .factory,
-#host,
-#questions,
-#contact {
+#host {
     scroll-margin-top: 88px;
 }
 
@@ -1617,35 +1613,6 @@ button.stamp-btn.ghost {
 .operator-note a {
     font-weight: 700;
     text-underline-offset: 3px;
-}
-
-.faq-list {
-    display: grid;
-    gap: 0.7rem;
-    max-width: 46rem;
-}
-
-.faq-item {
-    padding: 0;
-}
-
-.faq-item summary {
-    cursor: pointer;
-    list-style: none;
-    padding: 0.9rem 1.1rem;
-    font-family: var(--display);
-    font-size: 1.05rem;
-    letter-spacing: -0.03em;
-}
-
-.faq-item summary::-webkit-details-marker {
-    display: none;
-}
-
-.faq-item p {
-    padding: 0 1.1rem 1rem;
-    color: var(--muted);
-    max-width: 46ch;
 }
 
 .share-kicker {

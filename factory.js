@@ -267,7 +267,7 @@
             return fillHost(preset);
         }
         if (window.HorseradishLab && HorseradishLab.loadHost) {
-            setMsg("Asking the Lab for " + key + "…");
+            setMsg("Asking the Portal for " + key + "…");
             HorseradishLab.loadHost(key).then(function (host) {
                 if (host) {
                     fillHost(host);
@@ -817,7 +817,7 @@
                             return;
                         }
                         if (loginNote) {
-                            loginNote.textContent = saved.message || "The Lab did not take it.";
+                            loginNote.textContent = saved.message || "The Portal did not take it.";
                         }
                     });
                 });
@@ -826,7 +826,7 @@
         if (typeof dialog.showModal === "function") {
             dialog.showModal();
         } else {
-            setMsg("To save this, login to the portal.");
+            setMsg("To save this, login to the Portal.");
         }
     }
 
@@ -847,7 +847,7 @@
                 return;
             }
             saveBench(host);
-            setMsg(result.message || "Kept on this bench. The Lab shelf is not mounted yet.");
+            setMsg(result.message || "Kept on this bench. The Portal shelf is not mounted yet.");
         });
     });
     document.getElementById("login-close").addEventListener("click", function () {
@@ -856,7 +856,7 @@
     document.getElementById("bench-save").addEventListener("click", function () {
         saveBench(spec());
         dialog.close();
-        setMsg("Kept on this bench. The Lab still wants Google.");
+        setMsg("Kept on this bench. The Portal still wants Google.");
     });
 
     render();
