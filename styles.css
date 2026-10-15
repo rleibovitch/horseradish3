@@ -1008,9 +1008,17 @@ button.stamp-btn.ghost {
 
 .factory-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 280px;
+    grid-template-columns: minmax(0, 1fr);
     gap: 1.5rem;
     align-items: start;
+}
+
+.factory-grid.has-dock {
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+}
+
+.factory-grid.has-dock .plant-stage {
+    display: none;
 }
 
 .factory-steps {
@@ -1821,13 +1829,14 @@ button.stamp-btn.ghost {
 }
 
 @media (max-width: 860px) {
-    .factory-grid {
+    .factory-grid,
+    .factory-grid.has-dock {
         grid-template-columns: 1fr;
         display: grid;
     }
 
     .host-dock {
-        order: -1;
+        order: 2;
         position: static;
     }
 

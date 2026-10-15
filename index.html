@@ -117,7 +117,7 @@
 
                         <article class="stamp factory-step" id="step-brain" hidden>
                             <p class="step-num">02 Brain</p>
-                            <h3>Give it a brain</h3>
+                            <h3>Give it knowledge</h3>
                             <p class="step-copy">This is the specialty. Upload a file. Feed it a website. That is what the Host knows.</p>
 
                             <label class="field-label" for="specialty">Specialty</label>
@@ -130,14 +130,14 @@
                             <label class="field-label" for="site-url">Feed it a website</label>
                             <input id="site-url" name="site" type="url" placeholder="https://horseradish.ai" autocomplete="off">
 
-                            <button type="button" class="mini-stamp" id="brain-btn">That's the brain</button>
+                            <button type="button" class="mini-stamp" id="brain-btn">That's the knowledge</button>
                             <p class="output-msg" data-card-msg></p>
                         </article>
 
                         <article class="stamp factory-step" id="step-deploy" hidden>
                             <p class="step-num">03 Deploy</p>
-                            <h3>Plant it, or zip it.</h3>
-                            <p class="step-copy">What wakes the Host? Always-on. Or a condition — a phrase, a page. Helpful when it wakes. Quiet when it doesn't. Then plant it on a site, zip it as an extension, or save it to the Lab.</p>
+                            <h3>Place it on your asset</h3>
+                            <p class="step-copy">Plant it on a site. Zip it as an extension. That is the Host on your asset. To save this, login to the portal.</p>
 
                             <p class="field-label" id="trigger-label">When does it wake?</p>
                             <div class="trigger-picker" role="radiogroup" aria-labelledby="trigger-label">
@@ -185,17 +185,17 @@
                                 <div class="output-actions">
                                     <button type="button" class="stamp-btn output-btn" id="copy-embed">Copy embed HTML</button>
                                     <button type="button" class="stamp-btn output-btn alt" id="download-zip">Download extension ZIP</button>
-                                    <button type="button" class="stamp-btn output-btn ghost" id="save-factory">Save to the Lab</button>
+                                    <button type="button" class="stamp-btn output-btn ghost" id="save-factory">Login to the portal</button>
                                 </div>
                                 <p class="output-msg" id="output-msg" role="status"></p>
                                 <pre class="embed-preview" id="embed-preview" hidden></pre>
-                                <p class="field-hint">Embed HTML for a site. A ZIP for the extension. Saving to the Lab needs Google. Copying does not. The bench in this browser can hold a draft.</p>
+                                <p class="field-hint">Embed HTML plants it on a site. A ZIP is the extension. To save this, login to the portal.</p>
                                 <ul class="bench-list" id="bench-list" hidden></ul>
                             </div>
                         </article>
                     </div>
 
-                    <aside class="host-dock stamp" aria-live="polite">
+                    <aside class="host-dock stamp" id="host-dock" hidden aria-live="polite">
                         <p class="agent-kicker">Your Host</p>
                         <div class="host-being" id="host-being" data-body="square" data-stage="idle">
                             <div class="host-aura" aria-hidden="true"></div>
@@ -229,7 +229,7 @@
                 <p class="num" aria-hidden="true">02</p>
                 <p class="eyebrow">The Host</p>
                 <h2>Horseradish is the generic Host.</h2>
-                <p class="lede host-lede">Three parts. Build a shape. Give it a brain. Deploy it. Every Host has a house: orchestrator, knowledge, peer to peer.</p>
+                <p class="lede host-lede">Three parts. Give it a shape. Give it knowledge. Place it on your asset. To save this, login to the portal.</p>
                 <div class="agent-row">
                     <article class="stamp agent">
                         <p class="agent-kicker">01 Build</p>
@@ -238,13 +238,13 @@
                     </article>
                     <article class="stamp agent">
                         <p class="agent-kicker">02 Brain</p>
-                        <h3>Specialty</h3>
+                        <h3>Knowledge</h3>
                         <p>A file. A website. That is what the Host knows.</p>
                     </article>
                     <article class="stamp agent">
                         <p class="agent-kicker">03 Deploy</p>
-                        <h3>Plant or zip</h3>
-                        <p>Always-on, or a qualifying event. On a site as code, or off-site as an extension.</p>
+                        <h3>Your asset</h3>
+                        <p>On a site as code, or off-site as an extension. Login to the portal to keep it.</p>
                     </article>
                 </div>
             </div>
@@ -257,7 +257,7 @@
                 <h2>Ask a good question.</h2>
                 <article class="stamp operator-note">
                     <p class="agent-kicker">From the floor</p>
-                    <p>The factory is open. Save a Host to the Lab. If yours misses, <a href="contact.html">send the work</a>. I'd rather hear it than guess.</p>
+                    <p>The factory is open. To save a Host, login to the portal. If yours misses, <a href="contact.html">send the work</a>. I'd rather hear it than guess.</p>
                 </article>
                 <div class="faq-list">
                     <details class="stamp faq-item">
@@ -266,7 +266,7 @@
                     </details>
                     <details class="stamp faq-item">
                         <summary>02  What is the factory?</summary>
-                        <p>Horseradish codes Hosts. Walk in with a specialty. Build a shape. Give it a brain. Deploy it. Walk out with embed HTML or an extension ZIP.</p>
+                        <p>Horseradish codes Hosts. Walk in with a specialty. Give it a shape. Give it knowledge. Place it on your asset. Walk out with embed HTML or an extension ZIP. To save this, login to the portal.</p>
                     </details>
                     <details class="stamp faq-item">
                         <summary>03  How is this not a chatbot?</summary>
@@ -286,7 +286,7 @@
                     </details>
                     <details class="stamp faq-item">
                         <summary>07  Do I need to log in?</summary>
-                        <p>No. Copying and downloading do not require login. Saving to the Lab does. Google opens Horseradish. This browser can keep a bench draft.</p>
+                        <p>No. Copying and downloading do not require login. To save this, login to the portal. Google opens the Lab. This browser can keep a bench draft.</p>
                     </details>
                     <details class="stamp faq-item">
                         <summary>08  Is Horseradish an MCP?</summary>
@@ -311,8 +311,8 @@
     </main>
 
     <dialog class="login-dialog stamp" id="login-dialog" aria-labelledby="login-title">
-        <p class="agent-kicker">The Lab</p>
-        <h3 id="login-title">Save it. Enter Horseradish.</h3>
+        <p class="agent-kicker">The portal</p>
+        <h3 id="login-title">To save this, login to the portal.</h3>
         <p>Google opens the Lab. The Host lives on your shelf. Copying and the ZIP stay free.</p>
         <div id="google-slot" class="google-slot"></div>
         <p class="output-msg" id="login-note" role="status"></p>

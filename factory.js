@@ -289,7 +289,7 @@
             return "A shape is forming. Give me a name.";
         }
         if (!state.specialty && !state.fileName && !state.site) {
-            return "That's a shape. Give me a brain.";
+            return "That's a shape. Give me knowledge.";
         }
         if (state.trigger === "phrase" && !state.phrase) {
             return "Brain is in. What phrase deploys me?";
@@ -380,6 +380,15 @@
                 el.style.opacity = "1";
             }
         });
+        const dock = document.getElementById("host-dock");
+        const grid = document.querySelector(".factory-grid");
+        const atEnd = state.card === "deploy";
+        if (dock) {
+            dock.hidden = !atEnd;
+        }
+        if (grid) {
+            grid.classList.toggle("has-dock", atEnd);
+        }
     }
 
     function showCard(part) {
@@ -700,7 +709,7 @@
         }
         paintFromPrompt(promptInput.value);
         state.formed = true;
-        setMsg("Formed. Next: the brain.");
+        setMsg("Formed. Next: knowledge.");
         showCard("brain");
     });
 
@@ -711,7 +720,7 @@
             return;
         }
         state.brained = true;
-        setMsg("Brain is in. Deploy it.");
+        setMsg("Knowledge is in. Place it on your asset.");
         showCard("deploy");
     });
 
@@ -817,7 +826,7 @@
         if (typeof dialog.showModal === "function") {
             dialog.showModal();
         } else {
-            setMsg("Saving to the Lab needs Google.");
+            setMsg("To save this, login to the portal.");
         }
     }
 
