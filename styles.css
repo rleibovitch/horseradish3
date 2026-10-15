@@ -1738,6 +1738,21 @@ button.stamp-btn.ghost {
     padding-bottom: 32px;
 }
 
+body.lab-open .lab-hero {
+    padding-top: 96px;
+    padding-bottom: 8px;
+}
+
+body.lab-open .lab-hero .num,
+body.lab-open .lab-hero .hero-lede,
+body.lab-open .lab-hero .hero-presence {
+    display: none;
+}
+
+body.lab-open .lab-hero h1 {
+    font-size: clamp(2rem, 5vw, 2.8rem);
+}
+
 .lab-body {
     padding: 0 0 72px;
 }
@@ -1746,6 +1761,51 @@ button.stamp-btn.ghost {
     max-width: 32rem;
     padding: 1.35rem 1.3rem 1.25rem;
     margin-bottom: 1.4rem;
+}
+
+.lab-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 0 2rem;
+    text-align: center;
+}
+
+.lab-stage .host-dock {
+    width: min(100%, 28rem);
+    position: static;
+    order: 0;
+    transform: rotate(-0.7deg);
+    margin: 0;
+}
+
+.lab-stage .lab-wake-line,
+.lab-stage .lab-host-actions {
+    order: 1;
+}
+
+.lab-wake-line {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin: 0.95rem 0 0;
+}
+
+.lab-host-actions {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 0.9rem 0 0;
+}
+
+.lab-shelf {
+    margin: 2rem 0 0;
+}
+
+.lab-card.is-current {
+    background: var(--cream);
+    box-shadow: 6px 6px 0 var(--ink);
 }
 
 .lab-who {
@@ -1798,7 +1858,7 @@ button.stamp-btn.ghost {
 }
 
 .lab-floor .stamp-btn {
-    margin: 0;
+    margin: 0 0 1.8rem;
 }
 
 .dialog-actions {

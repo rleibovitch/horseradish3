@@ -69,6 +69,10 @@ document.addEventListener("DOMContentLoaded", function () {
         }, { threshold: 0.12 });
 
         animateElements.forEach(function (el) {
+            if (el.closest("[hidden]")) {
+                el.classList.add("in-view");
+                return;
+            }
             el.style.opacity = "0";
             el.style.transition = "opacity 0.45s ease";
             observer.observe(el);

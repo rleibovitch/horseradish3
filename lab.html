@@ -47,9 +47,9 @@
     <main id="main" class="lab-page">
         <section class="hero lab-hero">
             <p class="num" aria-hidden="true">LAB</p>
-            <p class="eyebrow">Saved Hosts</p>
+            <p class="eyebrow">The portal</p>
             <h1>The Lab.</h1>
-            <p class="lede hero-lede">Build on the floor. Save it here. Google is the key to Horseradish.</p>
+            <p class="lede hero-lede">This is where your Host lives. Login, and it shows itself.</p>
             <div class="lab-who" id="lab-who" hidden></div>
             <p class="presence hero-presence is-online" data-presence>
                 <span class="presence-dot" aria-hidden="true"></span>
@@ -62,7 +62,7 @@
                 <div class="stamp lab-door" id="lab-door">
                     <p class="agent-kicker">Enter Horseradish</p>
                     <h2>Sign in with Google.</h2>
-                    <p class="step-copy">The Lab keeps your someone. Copying and the ZIP stay free. Saving is a login.</p>
+                    <p class="step-copy">The Lab shows you your Host. Copying and the ZIP stay free. Saving is a login.</p>
                     <div id="google-slot" class="google-slot"></div>
                     <p class="field-hint"><a href="index.html#factory">Or go build first.</a></p>
                 </div>
@@ -70,6 +70,42 @@
                 <p class="output-msg" id="lab-note" role="status"></p>
 
                 <div class="lab-floor" id="lab-floor" hidden>
+                    <div class="lab-stage" id="lab-stage" hidden>
+                        <aside class="host-dock stamp" id="host-dock">
+                            <p class="agent-kicker">Your Host</p>
+                            <div class="host-being" id="host-being" data-body="square" data-stage="always">
+                                <div class="host-aura" aria-hidden="true"></div>
+                                <div class="host-figure">
+                                    <div class="host-shape">
+                                        <img class="host-portrait" id="host-portrait" alt="" hidden>
+                                        <span class="host-face" aria-hidden="true">
+                                            <span class="host-eye left"></span>
+                                            <span class="host-eye right"></span>
+                                            <span class="host-mouth"></span>
+                                        </span>
+                                    </div>
+                                    <div class="host-torso" aria-hidden="true"></div>
+                                </div>
+                                <p class="host-name" id="host-name-live">Unnamed</p>
+                                <p class="host-mood" id="host-mood">I'm your Host.</p>
+                                <ul class="host-kit">
+                                    <li data-kit="build">Build</li>
+                                    <li data-kit="brain">Brain</li>
+                                    <li data-kit="deploy">Deploy</li>
+                                </ul>
+                                <p class="host-share" id="host-share-live"></p>
+                            </div>
+                        </aside>
+                        <p class="lab-wake-line" id="lab-wake-line"></p>
+                        <div class="lab-host-actions">
+                            <button type="button" class="mini-stamp" id="lab-wake">Wake</button>
+                            <button type="button" class="text-chip" id="lab-release">Release</button>
+                        </div>
+                    </div>
+
+                    <p class="lab-empty" id="lab-empty" hidden>No Host here yet. Go build one.</p>
+                    <a class="stamp-btn" id="lab-build" href="index.html#factory">Build a Host</a>
+
                     <form class="p2p-bar stamp" id="p2p-form">
                         <p class="eyebrow">Share</p>
                         <h2>Got a share code?</h2>
@@ -81,12 +117,12 @@
                         <p class="field-hint">Peer to peer. A Host swallows a code and inherits the specialty. Try <button type="button" class="text-chip" data-preset="HOST-HORSERADISH">HOST-HORSERADISH</button>, <button type="button" class="text-chip" data-preset="HOST-HOUSE">HOST-HOUSE</button>, <button type="button" class="text-chip" data-preset="HOST-FLOOR">HOST-FLOOR</button>, or <button type="button" class="text-chip" data-preset="HOST-LISTING">HOST-LISTING</button>.</p>
                     </form>
 
-                    <p class="eyebrow">Your shelf</p>
-                    <h2>Wake one. Release one.</h2>
-                    <p class="lede host-lede">These are yours. Wake a share code above, or one from the shelf.</p>
-                    <p class="lab-empty" id="lab-empty" hidden>No Hosts on this shelf. Go build one.</p>
-                    <div class="lab-grid" id="lab-grid"></div>
-                    <a class="stamp-btn" href="index.html#factory">Build another</a>
+                    <div class="lab-shelf" id="lab-shelf" hidden>
+                        <p class="eyebrow">Your shelf</p>
+                        <h2>More Hosts</h2>
+                        <p class="lede host-lede">These are yours too. Tap one to show it.</p>
+                        <div class="lab-grid" id="lab-grid"></div>
+                    </div>
                 </div>
             </div>
         </section>
