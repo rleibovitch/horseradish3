@@ -474,22 +474,48 @@
     }
 
     function embedHtml(host) {
-        const wake = host.trigger === "phrase"
-            ? "Wakes on the phrase \"" + host.phrase + "\"."
-            : host.trigger === "page"
-                ? "Wakes on pages matching " + host.page + "."
-                : "Always-on.";
+        const id = "hr-host-" + String(host.share || "host").replace(/[^A-Za-z0-9-]/g, "");
+        const payload = JSON.stringify({
+            name: host.name || "Host",
+            specialty: host.specialty || "",
+            share: host.share || "",
+            body: host.body || "square"
+        }).replace(/</g, "\\u003c");
+        const label = String(host.name || "Host").replace(/--/g, "—");
         return [
-            "<!-- Horseradish Host: " + host.name + " / " + host.share + " -->",
-            "<div id=\"horseradish-host\" data-share=\"" + host.share + "\" data-body=\"" + host.body + "\">",
-            "  <p><strong>" + host.name + "</strong> — a Horseradish Host.</p>",
-            "  <p>" + host.specialty + "</p>",
-            "  <p>" + wake + " Peer to peer. Share code " + host.share + ".</p>",
-            "</div>",
+            "<!-- Horseradish Host: " + label + " / " + host.share + " -->",
+            "<div id=\"" + id + "\"></div>",
             "<style>",
-            "#horseradish-host{font-family:'Space Grotesk',sans-serif;background:#fafaf8;color:#1a1a2e;border:2px solid #1a1a2e;box-shadow:6px 6px 0 #1a1a2e;padding:1rem 1.1rem;max-width:22rem;}",
-            "#horseradish-host p{margin:0 0 .4rem;}#horseradish-host p:last-child{margin:0;color:#5c5a70;font-size:.92rem;}",
-            "</style>"
+            "#" + id + "{position:fixed;right:20px;bottom:20px;z-index:2147483646;font-family:'Space Grotesk',Segoe UI,sans-serif;}",
+            "#" + id + " .hr-dock{display:flex;flex-direction:column;align-items:flex-end;gap:10px;}",
+            "#" + id + " .hr-card{display:none;width:220px;background:#fafaf8;color:#1a1a2e;border:2px solid #1a1a2e;box-shadow:6px 6px 0 #1a1a2e;padding:12px 14px;}",
+            "#" + id + ".is-open .hr-card{display:block;}",
+            "#" + id + " .hr-card strong{display:block;font-size:15px;margin:0 0 4px;}",
+            "#" + id + " .hr-card p{margin:0;color:#5c5a70;font-size:13px;line-height:1.35;}",
+            "#" + id + " .hr-avatar{width:72px;height:72px;border:2px solid #1a1a2e;background:#f5f0e8;box-shadow:5px 5px 0 #1a1a2e;cursor:pointer;position:relative;padding:0;}",
+            "#" + id + " .hr-avatar[data-body='circle']{border-radius:50%;}",
+            "#" + id + " .hr-avatar[data-body='square']{border-radius:14px;}",
+            "#" + id + " .hr-avatar[data-body='triangle']{width:0;height:0;border:0;background:transparent;box-shadow:none;border-left:36px solid transparent;border-right:36px solid transparent;border-bottom:64px solid #1a1a2e;}",
+            "#" + id + " .hr-avatar[data-body='triangle'] .hr-face{position:absolute;left:50%;top:22px;transform:translateX(-50%);width:42px;height:28px;background:#f5f0e8;clip-path:polygon(50% 0,100% 100%,0 100%);}",
+            "#" + id + " .hr-avatar[data-body='humanoid']{border-radius:50% 50% 42% 42%;height:78px;}",
+            "#" + id + " .hr-face{position:absolute;inset:18px 12px 16px;}",
+            "#" + id + " .hr-eye{position:absolute;top:8px;width:8px;height:8px;border-radius:50%;background:#1a1a2e;}",
+            "#" + id + " .hr-eye.l{left:8px;}",
+            "#" + id + " .hr-eye.r{right:8px;}",
+            "#" + id + " .hr-mouth{position:absolute;left:50%;bottom:4px;width:14px;height:6px;margin-left:-7px;border-bottom:2px solid #1a1a2e;border-radius:0 0 10px 10px;}",
+            "</style>",
+            "<script>(function(){",
+            "var h=" + payload + ";",
+            "var root=document.getElementById(" + JSON.stringify(id) + ");",
+            "if(!root||root.getAttribute('data-ready'))return;",
+            "root.setAttribute('data-ready','1');",
+            "root.innerHTML='<div class=\"hr-dock\"><div class=\"hr-card\"><strong></strong><p></p></div><button type=\"button\" class=\"hr-avatar\" aria-label=\"Open Host\"><span class=\"hr-face\"><i class=\"hr-eye l\"></i><i class=\"hr-eye r\"></i><i class=\"hr-mouth\"></i></span></button></div>';",
+            "root.querySelector('.hr-card strong').textContent=h.name;",
+            "root.querySelector('.hr-card p').textContent=h.specialty||h.share;",
+            "var btn=root.querySelector('.hr-avatar');",
+            "btn.setAttribute('data-body',h.body||'square');",
+            "btn.addEventListener('click',function(){root.classList.toggle('is-open');});",
+            "})();</script>"
         ].join("\n");
     }
 
@@ -727,7 +753,7 @@
         embedPreview.textContent = html;
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(html).then(function () {
-                setMsg("Embed HTML copied. Plant it on a site.");
+                setMsg("Embed HTML copied. The Host sits in the lower right.");
             }).catch(function () {
                 setMsg("Copy failed. The snippet is below. Select it.");
             });
@@ -841,7 +867,10 @@
     });
 
     document.getElementById("copy-embed").addEventListener("click", copyEmbed);
-    document.getElementById("download-zip").addEventListener("click", downloadZip);
+    const zipBtn = document.getElementById("download-zip");
+    if (zipBtn) {
+        zipBtn.addEventListener("click", downloadZip);
+    }
     const loginNote = document.getElementById("login-note");
     const googleSlot = document.getElementById("google-slot");
 
