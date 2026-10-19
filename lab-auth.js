@@ -349,6 +349,16 @@
         });
     }
 
+    function asIso(value) {
+        if (!value) {
+            return "";
+        }
+        if (typeof value.toDate === "function") {
+            return value.toDate().toISOString();
+        }
+        return String(value);
+    }
+
     function listNotes(hosts) {
         if (!initFirebase()) {
             return Promise.resolve([]);
@@ -360,16 +370,17 @@
                 .then(function (snap) {
                     return snap.docs.map(function (doc) {
                         const row = doc.data() || {};
-                        let at = row.at || "";
-                        if (at && typeof at.toDate === "function") {
-                            at = at.toDate().toISOString();
-                        }
                         return {
                             id: doc.id,
                             text: row.text || "",
+                            reply: row.reply || "",
                             share: row.share || host.share,
-                            at: at,
-                            name: host.name || "Host"
+                            at: asIso(row.at),
+                            repliedAt: asIso(row.repliedAt),
+                            name: host.name || "Host",
+                            inbox: host.inbox,
+                            webhook: host.webhook || "",
+                            phone: host.phone || ""
                         };
                     });
                 }).catch(function () {
@@ -380,6 +391,55 @@
             return [].concat.apply([], chunks).sort(function (a, b) {
                 return String(b.at).localeCompare(String(a.at));
             });
+        });
+    }
+
+    function replyNote(note, text) {
+        return waitFirebaseUser().then(function (user) {
+            if (!user) {
+                return { ok: false, message: "Sign in once more so Firebase Auth can keep your Host." };
+            }
+            const reply = String(text || "").trim();
+            if (!note || !note.inbox || !note.id) {
+                return { ok: false, message: "No inquiry to answer." };
+            }
+            if (!reply) {
+                return { ok: false, message: "Write a reply first." };
+            }
+            if (reply.length > 400) {
+                return { ok: false, message: "Keep the reply under 400 characters." };
+            }
+            const at = new Date().toISOString();
+            const ref = firebase.firestore().collection("inbox").doc(note.inbox).collection("items").doc(note.id);
+            return ref.update({
+                reply: reply,
+                repliedAt: at
+            }).then(function () {
+                return firebase.firestore().collection("public").doc(note.inbox).set({
+                    lastReply: reply,
+                    lastReplyAt: at,
+                    lastInquiry: note.text || ""
+                }, { merge: true });
+            }).then(function () {
+                const hook = String(note.webhook || "").trim();
+                if (hook && /^https:\/\//i.test(hook)) {
+                    return fetch(hook, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            name: note.name || "",
+                            share: note.share || "",
+                            text: note.text || "",
+                            reply: reply,
+                            at: at
+                        })
+                    }).catch(function () {});
+                }
+            }).then(function () {
+                return { ok: true, reply: reply, repliedAt: at };
+            });
+        }).catch(function (err) {
+            return { ok: false, message: firebaseMiss(err) };
         });
     }
 
@@ -528,6 +588,7 @@
         takePending: takePending,
         list: list,
         listNotes: listNotes,
+        replyNote: replyNote,
         patchHost: patchHost,
         loadHost: loadHost,
         forget: forget,

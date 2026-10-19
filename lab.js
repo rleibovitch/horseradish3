@@ -23,6 +23,7 @@
     let hosts = [];
     let query = "";
     let pendingDelete = null;
+    let pendingReply = null;
 
     function showNote(text) {
         note.textContent = text || "";
@@ -319,7 +320,24 @@
             copy.appendChild(name);
             copy.appendChild(text);
             copy.appendChild(time);
+            if (note.reply) {
+                const answer = document.createElement("p");
+                answer.className = "os-task-answer";
+                answer.textContent = note.reply;
+                copy.appendChild(answer);
+                const replied = document.createElement("time");
+                replied.textContent = "Replied " + stamp(note.repliedAt);
+                copy.appendChild(replied);
+            }
+            const reply = document.createElement("button");
+            reply.type = "button";
+            reply.className = "os-mini";
+            reply.textContent = note.reply ? "Edit reply" : "Reply";
+            reply.addEventListener("click", function () {
+                openReply(note);
+            });
             item.appendChild(copy);
+            item.appendChild(reply);
             taskList.appendChild(item);
         });
     }
@@ -463,6 +481,47 @@
         }
     }
 
+    function closeReplyAsk() {
+        pendingReply = null;
+        const dialog = document.getElementById("os-reply-ask");
+        if (dialog && dialog.open) {
+            dialog.close();
+        }
+    }
+
+    function openReply(note) {
+        pendingReply = note;
+        const dialog = document.getElementById("os-reply-ask");
+        const title = document.getElementById("os-reply-ask-title");
+        const hostEl = document.getElementById("os-reply-host");
+        const quote = document.getElementById("os-reply-quote");
+        const box = document.getElementById("os-reply-text");
+        const status = document.getElementById("os-reply-status");
+        if (title) {
+            title.textContent = "Reply through " + (note.name || "this Host");
+        }
+        if (hostEl) {
+            hostEl.textContent = note.share || "Host";
+        }
+        if (quote) {
+            quote.textContent = note.text || "";
+        }
+        if (box) {
+            box.value = note.reply || "";
+        }
+        if (status) {
+            status.textContent = "";
+        }
+        if (dialog && typeof dialog.showModal === "function") {
+            if (!dialog.open) {
+                dialog.showModal();
+            }
+            if (box) {
+                box.focus();
+            }
+        }
+    }
+
     function openConnect(host) {
         const panel = document.getElementById("os-connect");
         const nameEl = document.getElementById("os-connect-name");
@@ -579,6 +638,55 @@
         });
     }
 
+    const replyAsk = document.getElementById("os-reply-ask");
+    const replyForm = document.getElementById("os-reply-form");
+    const replyCancel = document.getElementById("os-reply-cancel");
+    if (replyCancel) {
+        replyCancel.addEventListener("click", closeReplyAsk);
+    }
+    if (replyForm) {
+        replyForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+            const note = pendingReply;
+            const box = document.getElementById("os-reply-text");
+            const status = document.getElementById("os-reply-status");
+            const go = document.getElementById("os-reply-go");
+            if (!note) {
+                return;
+            }
+            if (go) {
+                go.disabled = true;
+            }
+            if (status) {
+                status.textContent = "Sending…";
+            }
+            Lab.replyNote(note, box && box.value).then(function (result) {
+                if (go) {
+                    go.disabled = false;
+                }
+                if (!result.ok) {
+                    if (status) {
+                        status.textContent = result.message || "The reply did not go through.";
+                    }
+                    return;
+                }
+                closeReplyAsk();
+                paintFloor();
+                showView("tasks");
+            });
+        });
+    }
+    if (replyAsk) {
+        replyAsk.addEventListener("cancel", function () {
+            pendingReply = null;
+        });
+        replyAsk.addEventListener("click", function (event) {
+            if (event.target === replyAsk) {
+                closeReplyAsk();
+            }
+        });
+    }
+
     const connectForm = document.getElementById("os-connect");
     if (connectForm) {
         connectForm.addEventListener("submit", function (event) {
@@ -639,7 +747,6 @@
             const shown = hosts.filter(matches);
             fillTable(fleetBody, shown);
             fillTable(hostsBody, shown);
-            fillTasks(shown);
             if (query) {
                 showView("hosts");
             }

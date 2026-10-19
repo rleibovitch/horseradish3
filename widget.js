@@ -50,6 +50,29 @@
         });
     }
 
+    function showHostReply(host, el) {
+        if (!host || !host.inbox || !el) {
+            return;
+        }
+        const project = host.projectId || DEFAULTS.projectId;
+        const key = host.apiKey || DEFAULTS.apiKey;
+        fetch("https://firestore.googleapis.com/v1/projects/" + project +
+            "/databases/(default)/documents/public/" + encodeURIComponent(host.inbox) +
+            "?key=" + encodeURIComponent(key))
+            .then(function (res) {
+                return res.ok ? res.json() : Promise.reject();
+            })
+            .then(function (doc) {
+                const fields = (doc && doc.fields) || {};
+                const reply = fields.lastReply && fields.lastReply.stringValue;
+                if (reply) {
+                    el.hidden = false;
+                    el.textContent = reply;
+                }
+            })
+            .catch(function () {});
+    }
+
     function mount(host, node) {
         if (!host || !node) {
             return;
@@ -77,6 +100,12 @@
             "</div>";
         node.querySelector("strong").textContent = host.name || "Host";
         node.querySelector(".hr-specialty").textContent = host.specialty || "";
+        const card = node.querySelector(".hr-card");
+        const spoken = document.createElement("p");
+        spoken.className = "hr-reply";
+        spoken.hidden = true;
+        card.appendChild(spoken);
+        showHostReply(host, spoken);
         const avatar = node.querySelector(".hr-avatar");
         avatar.setAttribute("data-body", host.body || "square");
         avatar.addEventListener("click", function () {
@@ -121,6 +150,7 @@
             ".hr-host .hr-form textarea{width:100%;border:2px solid #1a1a2e;background:#fff;color:#1a1a2e;font:inherit;padding:8px;resize:vertical;margin:0 0 8px;}",
             ".hr-host .hr-form button{border:2px solid #1a1a2e;background:#1a1a2e;color:#fafaf8;font:inherit;font-weight:600;padding:8px 12px;cursor:pointer;}",
             ".hr-host .hr-status{margin:8px 0 0;font-size:12px;color:#5c5a70;min-height:1em;}",
+            ".hr-host .hr-reply{margin:10px 0 0;font-size:13px;line-height:1.35;color:#1a1a2e;border-top:1px solid #d9d6cc;padding-top:8px;}",
             ".hr-host .hr-vis{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}",
             ".hr-host .hr-avatar{width:72px;height:72px;border:2px solid #1a1a2e;background:#f5f0e8;box-shadow:5px 5px 0 #1a1a2e;cursor:pointer;position:relative;padding:0;}",
             ".hr-host .hr-avatar[data-body='circle']{border-radius:50%;}",
