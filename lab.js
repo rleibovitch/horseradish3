@@ -22,6 +22,7 @@
     let current = null;
     let hosts = [];
     let query = "";
+    let pendingDelete = null;
 
     function showNote(text) {
         note.textContent = text || "";
@@ -198,13 +199,19 @@
         });
         const release = document.createElement("button");
         release.type = "button";
-        release.className = "os-mini";
-        release.textContent = "Release";
+        release.className = "os-mini os-delete";
+        release.setAttribute("aria-label", "Delete " + (host.name || "Host"));
+        release.title = "Delete";
+        release.innerHTML = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M9 3h6l1 2h7v2H1V5h7l1-2zm1 6h2v11h-2V9zm4 0h2v11h-2V9zM6 8h12v13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8z\"/></svg><span>Delete</span>";
         release.addEventListener("click", function () {
-            current = host.share === (current && current.share) ? null : current;
-            Lab.forget(host.share).then(function () {
-                paintFloor();
-            });
+            askDelete(host);
+        });
+        const connect = document.createElement("button");
+        connect.type = "button";
+        connect.className = "os-mini";
+        connect.textContent = "Connect";
+        connect.addEventListener("click", function () {
+            openConnect(host);
         });
         if (host.inbox) {
             const open = document.createElement("a");
@@ -214,6 +221,7 @@
             box.appendChild(open);
         }
         box.appendChild(wake);
+        box.appendChild(connect);
         box.appendChild(release);
         actions.appendChild(box);
 
@@ -413,6 +421,75 @@
         });
     }
 
+    function closeDeleteAsk() {
+        pendingDelete = null;
+        const dialog = document.getElementById("os-delete-ask");
+        if (dialog && dialog.open) {
+            dialog.close();
+        }
+    }
+
+    function doDelete(host) {
+        if (!host) {
+            return;
+        }
+        current = host.share === (current && current.share) ? null : current;
+        Lab.forget(host.share).then(function () {
+            paintFloor();
+        });
+    }
+
+    function askDelete(host) {
+        pendingDelete = host;
+        const dialog = document.getElementById("os-delete-ask");
+        const copy = document.getElementById("os-delete-ask-copy");
+        if (copy) {
+            copy.textContent = "This takes " + (host.name || "this Host") + " off your shelf.";
+        }
+        if (dialog && typeof dialog.showModal === "function") {
+            if (!dialog.open) {
+                dialog.showModal();
+            }
+            const cancel = document.getElementById("os-delete-cancel");
+            if (cancel) {
+                cancel.focus();
+            }
+            return;
+        }
+        if (window.confirm("Are you sure you want to delete?")) {
+            doDelete(host);
+        } else {
+            pendingDelete = null;
+        }
+    }
+
+    function openConnect(host) {
+        const panel = document.getElementById("os-connect");
+        const nameEl = document.getElementById("os-connect-name");
+        const phoneEl = document.getElementById("os-connect-phone");
+        const hookEl = document.getElementById("os-connect-hook");
+        const noteEl = document.getElementById("os-connect-note");
+        if (!panel) {
+            return;
+        }
+        panel.hidden = false;
+        panel.setAttribute("data-share", host.share || "");
+        if (nameEl) {
+            nameEl.textContent = host.name || "Host";
+        }
+        if (phoneEl) {
+            phoneEl.value = host.phone || "";
+        }
+        if (hookEl) {
+            hookEl.value = host.webhook || "";
+        }
+        if (noteEl) {
+            noteEl.textContent = "";
+        }
+        showView("hosts");
+        panel.scrollIntoView({ block: "start" });
+    }
+
     function showView(name) {
         document.querySelectorAll(".os-view").forEach(function (view) {
             view.hidden = view.getAttribute("data-view") !== name;
@@ -474,6 +551,52 @@
                     }
                     afterLogin();
                 });
+            });
+        });
+    }
+
+    const deleteAsk = document.getElementById("os-delete-ask");
+    const deleteCancel = document.getElementById("os-delete-cancel");
+    const deleteGo = document.getElementById("os-delete-go");
+    if (deleteCancel) {
+        deleteCancel.addEventListener("click", closeDeleteAsk);
+    }
+    if (deleteGo) {
+        deleteGo.addEventListener("click", function () {
+            const host = pendingDelete;
+            closeDeleteAsk();
+            doDelete(host);
+        });
+    }
+    if (deleteAsk) {
+        deleteAsk.addEventListener("cancel", function () {
+            pendingDelete = null;
+        });
+        deleteAsk.addEventListener("click", function (event) {
+            if (event.target === deleteAsk) {
+                closeDeleteAsk();
+            }
+        });
+    }
+
+    const connectForm = document.getElementById("os-connect");
+    if (connectForm) {
+        connectForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+            const share = connectForm.getAttribute("data-share");
+            const phone = (document.getElementById("os-connect-phone") || {}).value || "";
+            const webhook = (document.getElementById("os-connect-hook") || {}).value || "";
+            const noteEl = document.getElementById("os-connect-note");
+            Lab.patchHost(share, {
+                phone: String(phone).trim(),
+                webhook: String(webhook).trim()
+            }).then(function (result) {
+                if (noteEl) {
+                    noteEl.textContent = result.ok ? "Connected." : (result.message || "Could not connect.");
+                }
+                if (result.ok) {
+                    paintFloor();
+                }
             });
         });
     }

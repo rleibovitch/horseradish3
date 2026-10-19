@@ -193,7 +193,9 @@
             share: host.share || "",
             body: host.body || "square",
             specialty: host.specialty || "",
-            inbox: host.inbox
+            inbox: host.inbox,
+            phone: host.phone || "",
+            webhook: host.webhook || ""
         }).catch(function () {});
     }
 
@@ -230,6 +232,8 @@
                     incoming.builtAt = (existing && existing.builtAt) || now;
                     incoming.deployedAt = now;
                     incoming.inbox = incoming.inbox || (existing && existing.inbox) || makeInbox();
+                    incoming.phone = incoming.phone || (existing && existing.phone) || "";
+                    incoming.webhook = incoming.webhook || (existing && existing.webhook) || "";
                     if (again) {
                         incoming.rebuiltAt = now;
                         incoming.redeployedAt = now;
@@ -309,6 +313,39 @@
             }).catch(function (err) {
                 return { ok: false, hosts: [], logs: [], message: firebaseMiss(err) };
             });
+        });
+    }
+
+    function patchHost(share, fields) {
+        return waitFirebaseUser().then(function (user) {
+            if (!user) {
+                return { ok: false, message: "Sign in once more so Firebase Auth can keep your Host." };
+            }
+            const key = shareKey(share);
+            const ref = firebase.firestore().collection("lab").doc(user.uid);
+            return ref.get().then(function (snap) {
+                const data = snap.exists ? snap.data() : {};
+                const hosts = Array.isArray(data.hosts) ? data.hosts : [];
+                const logs = Array.isArray(data.logs) ? data.logs : [];
+                let found = null;
+                const next = hosts.map(function (host) {
+                    if (shareKey(host.share) !== key) {
+                        return host;
+                    }
+                    found = Object.assign({}, host, fields || {});
+                    return found;
+                });
+                if (!found) {
+                    return { ok: false, message: "No Host on this shelf matches." };
+                }
+                return ref.set({ hosts: next, logs: logs }).then(function () {
+                    return publishHost(found);
+                }).then(function () {
+                    return { ok: true, host: found };
+                });
+            });
+        }).catch(function (err) {
+            return { ok: false, message: firebaseMiss(err) };
         });
     }
 
@@ -491,6 +528,7 @@
         takePending: takePending,
         list: list,
         listNotes: listNotes,
+        patchHost: patchHost,
         loadHost: loadHost,
         forget: forget,
         wake: wake,

@@ -20,33 +20,33 @@
     }
 
     function postNote(host, text) {
-        const key = host.apiKey || DEFAULTS.apiKey;
-        const project = host.projectId || DEFAULTS.projectId;
         const inbox = host.inbox;
         if (!inbox) {
             return Promise.reject(new Error("inbox"));
         }
-        const url = "https://firestore.googleapis.com/v1/projects/" + project +
-            "/databases/(default)/documents/inbox/" + encodeURIComponent(inbox) + "/items?key=" + encodeURIComponent(key);
-        return fetch(url, {
+        const gate = host.gate || "https://horseradish.ai/api/inbox";
+        return fetch(gate, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                fields: {
-                    text: { stringValue: text },
-                    share: { stringValue: String(host.share || "") },
-                    at: { stringValue: new Date().toISOString() }
-                }
+                inbox: inbox,
+                share: String(host.share || ""),
+                text: text
             })
         }).then(function (res) {
-            if (!res.ok) {
-                return res.json().then(function (body) {
+            return res.json().then(function (body) {
+                if (!res.ok) {
                     const err = new Error("send");
                     err.body = body;
                     throw err;
-                });
-            }
-            return res.json();
+                }
+                if (host.phone && /Mobi|Android|iPhone/i.test(navigator.userAgent || "")) {
+                    const sms = "sms:" + String(host.phone).replace(/[^\d+]/g, "") +
+                        "?body=" + encodeURIComponent(text);
+                    window.location.href = sms;
+                }
+                return body;
+            });
         });
     }
 

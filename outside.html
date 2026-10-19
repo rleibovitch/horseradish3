@@ -94,6 +94,8 @@
                 share: host.share,
                 body: host.body,
                 inbox: host.inbox,
+                phone: host.phone || "",
+                gate: host.gate || "https://horseradish.ai/api/inbox",
                 apiKey: host.apiKey || "",
                 projectId: host.projectId || ""
             }));
@@ -113,7 +115,8 @@
                         specialty: f.specialty && f.specialty.stringValue,
                         share: f.share && f.share.stringValue,
                         body: f.body && f.body.stringValue,
-                        inbox: f.inbox && f.inbox.stringValue || inbox
+                        inbox: f.inbox && f.inbox.stringValue || inbox,
+                        phone: f.phone && f.phone.stringValue || ""
                     });
                 })
                 .catch(function () {

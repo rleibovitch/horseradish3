@@ -102,7 +102,9 @@
         formed: false,
         brained: false,
         editShare: "",
-        inbox: ""
+        inbox: "",
+        phone: "",
+        webhook: ""
     };
 
     function makeInbox() {
@@ -242,6 +244,8 @@
         state.portrait = preset.portrait || "";
         state.editShare = editing ? normalizeShare(preset.share) : "";
         state.inbox = preset.inbox || state.inbox || "";
+        state.phone = preset.phone || "";
+        state.webhook = preset.webhook || "";
         if (state.portrait) {
             portraitImg.src = state.portrait;
             portraitImg.hidden = false;
@@ -480,6 +484,8 @@
             share: host.share,
             body: host.body,
             inbox: host.inbox,
+            phone: host.phone || "",
+            gate: "https://horseradish.ai/api/inbox",
             apiKey: fb.apiKey || "",
             projectId: fb.projectId || ""
         }))));
@@ -511,6 +517,8 @@
             portrait: state.portrait,
             share: share,
             inbox: state.inbox,
+            phone: state.phone || "",
+            webhook: state.webhook || "",
             peer: true,
             factory: "Horseradish Host Factory"
         };

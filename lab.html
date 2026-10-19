@@ -9,7 +9,7 @@
     <meta name="description" content="The Horseradish Portal. Google gets you in. Your Host lives here.">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="shortcut icon" type="image/png" href="favicon.png">
-    <link rel="stylesheet" href="styles.css?v=inbox">
+    <link rel="stylesheet" href="styles.css?v=delete-ask">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -186,6 +186,20 @@
                                 <tbody id="os-hosts"></tbody>
                             </table>
                         </div>
+                        <form class="os-panel os-connect" id="os-connect" hidden>
+                            <p class="os-kicker">Connect</p>
+                            <h2 id="os-connect-name">Host</h2>
+                            <p class="os-hint">A note from the outside can text a phone or post to a webhook — CMS, POS, or the next system.</p>
+                            <label class="os-field-label" for="os-connect-phone">Phone</label>
+                            <input id="os-connect-phone" name="phone" type="tel" placeholder="+1 555 123 4567" autocomplete="off">
+                            <label class="os-field-label" for="os-connect-hook">Webhook</label>
+                            <input id="os-connect-hook" name="webhook" type="url" placeholder="https://" autocomplete="off">
+                            <div class="os-share-row" style="margin-top:0.85rem">
+                                <button type="submit" class="os-create">Save connection</button>
+                            </div>
+                            <p class="os-hint" id="os-connect-note" role="status"></p>
+                        </form>
+
                         <form class="os-panel os-share" id="p2p-form">
                             <p class="os-kicker">Share</p>
                             <h2>Got a share code?</h2>
@@ -253,12 +267,21 @@
     </div>
 
     <div class="os-scrim" id="os-scrim" hidden></div>
+    <dialog class="os-confirm" id="os-delete-ask" aria-labelledby="os-delete-ask-title">
+        <p class="os-kicker">Delete</p>
+        <h2 id="os-delete-ask-title">Are you sure you want to delete?</h2>
+        <p id="os-delete-ask-copy">This takes the Host off your shelf.</p>
+        <div class="os-confirm-actions">
+            <button type="button" class="os-ghost" id="os-delete-cancel">Cancel</button>
+            <button type="button" class="os-confirm-go" id="os-delete-go">Delete</button>
+        </div>
+    </dialog>
 
     <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
-    <script src="lab-auth.js?v=inbox"></script>
-    <script src="lab.js?v=inbox"></script>
+    <script src="lab-auth.js?v=delete-connect"></script>
+    <script src="lab.js?v=delete-ask"></script>
 </body>
 </html>

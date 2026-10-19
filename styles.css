@@ -2463,6 +2463,85 @@ body.os-body {
     background: #f9fafb;
 }
 
+.os-mini svg {
+    width: 14px;
+    height: 14px;
+    display: block;
+}
+
+.os-delete {
+    gap: 0.3rem;
+    color: #b91c1c;
+}
+
+.os-delete:hover {
+    background: #fef2f2;
+}
+
+.os-confirm {
+    border: 0;
+    border-radius: 16px;
+    padding: 1.35rem 1.3rem 1.2rem;
+    max-width: 26rem;
+    width: calc(100% - 2rem);
+    margin: auto;
+    background: #fff;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.22);
+    color: #111827;
+}
+
+.os-confirm::backdrop {
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.os-confirm h2 {
+    margin: 0 0 0.45rem;
+    font-size: 1.25rem;
+}
+
+.os-confirm p {
+    margin: 0 0 0.7rem;
+    color: #6b7280;
+}
+
+.os-confirm .os-kicker {
+    margin-bottom: 0.35rem;
+}
+
+.os-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.55rem;
+    margin-top: 1.1rem;
+}
+
+.os-confirm-go {
+    border: 0;
+    background: #b91c1c;
+    color: #fff;
+    border-radius: 10px;
+    padding: 0.65rem 0.9rem;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.os-confirm-go:hover {
+    background: #991b1b;
+}
+
+.os-connect {
+    margin-top: 1rem;
+}
+
+.os-connect input {
+    width: 100%;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 0.7rem 0.8rem;
+    font: inherit;
+}
+
 .os-activity {
     list-style: none;
     margin: 0;
