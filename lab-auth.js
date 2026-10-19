@@ -177,6 +177,26 @@
         return String(value || "").trim().toUpperCase().replace(/^HR-/, "HOST-");
     }
 
+    function makeInbox() {
+        if (root.crypto && crypto.randomUUID) {
+            return "in_" + crypto.randomUUID().replace(/-/g, "").slice(0, 20);
+        }
+        return "in_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    }
+
+    function publishHost(host) {
+        if (!initFirebase() || !host || !host.inbox) {
+            return Promise.resolve();
+        }
+        return firebase.firestore().collection("public").doc(host.inbox).set({
+            name: host.name || "",
+            share: host.share || "",
+            body: host.body || "square",
+            specialty: host.specialty || "",
+            inbox: host.inbox
+        }).catch(function () {});
+    }
+
     function save(host) {
         return load().then(function (cfg) {
             if (!cfg.user) {
@@ -209,6 +229,7 @@
                     incoming.savedAt = now;
                     incoming.builtAt = (existing && existing.builtAt) || now;
                     incoming.deployedAt = now;
+                    incoming.inbox = incoming.inbox || (existing && existing.inbox) || makeInbox();
                     if (again) {
                         incoming.rebuiltAt = now;
                         incoming.redeployedAt = now;
@@ -231,6 +252,8 @@
                     return ref.set({
                         hosts: next.slice(0, 24),
                         logs: logs.slice(0, 80)
+                    }).then(function () {
+                        return publishHost(incoming);
                     });
                 }).then(function () {
                     return { ok: true, host: incoming };
@@ -263,15 +286,62 @@
                         : "Enter the Portal first."
                 };
             }
-            return firebase.firestore().collection("lab").doc(user.uid).get().then(function (snap) {
+            const ref = firebase.firestore().collection("lab").doc(user.uid);
+            return ref.get().then(function (snap) {
                 const data = snap.exists ? snap.data() : {};
-                return {
-                    ok: true,
-                    hosts: Array.isArray(data.hosts) ? data.hosts : [],
-                    logs: Array.isArray(data.logs) ? data.logs : []
-                };
+                const hosts = Array.isArray(data.hosts) ? data.hosts : [];
+                const logs = Array.isArray(data.logs) ? data.logs : [];
+                let patched = false;
+                hosts.forEach(function (host) {
+                    if (host && !host.inbox) {
+                        host.inbox = makeInbox();
+                        patched = true;
+                    }
+                });
+                const ready = patched
+                    ? ref.set({ hosts: hosts, logs: logs }).then(function () {
+                        return Promise.all(hosts.map(publishHost));
+                    })
+                    : Promise.all(hosts.map(publishHost));
+                return ready.then(function () {
+                    return { ok: true, hosts: hosts, logs: logs };
+                });
             }).catch(function (err) {
                 return { ok: false, hosts: [], logs: [], message: firebaseMiss(err) };
+            });
+        });
+    }
+
+    function listNotes(hosts) {
+        if (!initFirebase()) {
+            return Promise.resolve([]);
+        }
+        const jobs = (hosts || []).filter(function (host) {
+            return host && host.inbox;
+        }).map(function (host) {
+            return firebase.firestore().collection("inbox").doc(host.inbox).collection("items").get()
+                .then(function (snap) {
+                    return snap.docs.map(function (doc) {
+                        const row = doc.data() || {};
+                        let at = row.at || "";
+                        if (at && typeof at.toDate === "function") {
+                            at = at.toDate().toISOString();
+                        }
+                        return {
+                            id: doc.id,
+                            text: row.text || "",
+                            share: row.share || host.share,
+                            at: at,
+                            name: host.name || "Host"
+                        };
+                    });
+                }).catch(function () {
+                    return [];
+                });
+        });
+        return Promise.all(jobs).then(function (chunks) {
+            return [].concat.apply([], chunks).sort(function (a, b) {
+                return String(b.at).localeCompare(String(a.at));
             });
         });
     }
@@ -420,6 +490,7 @@
         save: save,
         takePending: takePending,
         list: list,
+        listNotes: listNotes,
         loadHost: loadHost,
         forget: forget,
         wake: wake,

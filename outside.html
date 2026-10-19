@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The shop</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="styles.css?v=outside">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .outside {
+            min-height: 100vh;
+            padding: 72px 24px 120px;
+            max-width: 720px;
+            margin: 0 auto;
+        }
+        .outside h1 {
+            margin-bottom: 0.6rem;
+        }
+        .outside .lede {
+            max-width: 36ch;
+            margin: 0 0 2rem;
+        }
+        .outside-card {
+            padding: 1.4rem 1.3rem;
+        }
+        .outside-card p {
+            color: var(--muted);
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <a class="skip-link" href="#shop">Skip to shop</a>
+    <header class="nav-wrap">
+        <nav class="navbar" aria-label="Main">
+            <a class="nav-logo" href="index.html">
+                <img src="horseradish.png" alt="" class="logo-img">
+                <span>Horseradish</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="lab.html" class="nav-link">Portal</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main id="shop" class="outside">
+        <p class="eyebrow">Outside</p>
+        <h1>The shop.</h1>
+        <p class="lede">You're on the street. The Host is in the corner. Write a note.</p>
+        <div class="stamp outside-card">
+            <p class="agent-kicker" id="shop-kicker">The window</p>
+            <h2 id="shop-name">A Host lives here.</h2>
+            <p id="shop-copy">Tap the avatar in the lower right.</p>
+        </div>
+    </main>
+    <div id="hr-mount" data-hr-b></div>
+    <script src="widget.js?v=inbox"></script>
+    <script>
+    (function () {
+        function pack(host) {
+            return btoa(unescape(encodeURIComponent(JSON.stringify(host))));
+        }
+        function fromBench() {
+            try {
+                const raw = sessionStorage.getItem("horseradish-outside-host") || localStorage.getItem("horseradish-host-bench");
+                if (!raw) {
+                    return null;
+                }
+                const parsed = JSON.parse(raw);
+                if (parsed && parsed.share) {
+                    return parsed;
+                }
+                if (Array.isArray(parsed) && parsed[0]) {
+                    return parsed[0];
+                }
+            } catch (err) {}
+            return null;
+        }
+        function paint(host) {
+            if (!host) {
+                document.getElementById("shop-copy").textContent = "Build a Host, save it, then come back. The avatar will wait in the corner.";
+                return;
+            }
+            document.getElementById("shop-kicker").textContent = host.share || "Host";
+            document.getElementById("shop-name").textContent = host.name || "A Host lives here.";
+            document.getElementById("shop-copy").textContent = host.specialty || "Tap the avatar in the lower right.";
+            const mount = document.getElementById("hr-mount");
+            mount.setAttribute("data-hr-b", pack({
+                name: host.name,
+                specialty: host.specialty,
+                share: host.share,
+                body: host.body,
+                inbox: host.inbox,
+                apiKey: host.apiKey || "",
+                projectId: host.projectId || ""
+            }));
+            if (window.HorseradishWidget) {
+                HorseradishWidget.boot();
+            }
+        }
+        const inbox = new URLSearchParams(window.location.search).get("in");
+        const host = fromBench();
+        if (inbox && (!host || host.inbox !== inbox)) {
+            fetch("https://firestore.googleapis.com/v1/projects/horseradish-hosts-993ea/databases/(default)/documents/public/" + encodeURIComponent(inbox) + "?key=AIzaSyCBXPavsl8G8q1rj6fLbavsYpxVTZK7VSU")
+                .then(function (res) { return res.ok ? res.json() : Promise.reject(); })
+                .then(function (doc) {
+                    const f = doc.fields || {};
+                    paint({
+                        name: f.name && f.name.stringValue,
+                        specialty: f.specialty && f.specialty.stringValue,
+                        share: f.share && f.share.stringValue,
+                        body: f.body && f.body.stringValue,
+                        inbox: f.inbox && f.inbox.stringValue || inbox
+                    });
+                })
+                .catch(function () {
+                    paint(host);
+                });
+            return;
+        }
+        paint(host);
+    })();
+    </script>
+</body>
+</html>

@@ -2454,6 +2454,9 @@ body.os-body {
     font-size: 0.78rem;
     font-weight: 600;
     cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
 }
 
 .os-mini:hover {

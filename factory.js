@@ -101,8 +101,16 @@
         card: "build",
         formed: false,
         brained: false,
-        editShare: ""
+        editShare: "",
+        inbox: ""
     };
+
+    function makeInbox() {
+        if (window.crypto && crypto.randomUUID) {
+            return "in_" + crypto.randomUUID().replace(/-/g, "").slice(0, 20);
+        }
+        return "in_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    }
 
     function slugName(name) {
         const slug = String(name || "")
@@ -233,6 +241,7 @@
         state.fileText = preset.fileText || "";
         state.portrait = preset.portrait || "";
         state.editShare = editing ? normalizeShare(preset.share) : "";
+        state.inbox = preset.inbox || state.inbox || "";
         if (state.portrait) {
             portraitImg.src = state.portrait;
             portraitImg.hidden = false;
@@ -421,6 +430,30 @@
         if (grid) {
             grid.classList.toggle("has-dock", atEnd);
         }
+        plantFactoryWidget(atEnd);
+    }
+
+    function plantFactoryWidget(atEnd) {
+        let node = document.getElementById("hr-factory-mount");
+        if (!node) {
+            node = document.createElement("div");
+            node.id = "hr-factory-mount";
+            document.body.appendChild(node);
+        }
+        if (!atEnd || !isBuilt() || !isBrained()) {
+            node.hidden = true;
+            node.removeAttribute("data-ready");
+            node.innerHTML = "";
+            return;
+        }
+        const host = spec();
+        keepOutside(host);
+        node.hidden = false;
+        node.removeAttribute("data-ready");
+        node.removeAttribute("data-hr-b");
+        if (window.HorseradishWidget) {
+            HorseradishWidget.mount(JSON.parse(decodeURIComponent(escape(atob(packHost(host))))), node);
+        }
     }
 
     function showCard(part) {
@@ -439,8 +472,30 @@
         }
     }
 
+    function packHost(host) {
+        const fb = window.HorseradishLab && HorseradishLab.config().firebase ? HorseradishLab.config().firebase : {};
+        return btoa(unescape(encodeURIComponent(JSON.stringify({
+            name: host.name,
+            specialty: host.specialty,
+            share: host.share,
+            body: host.body,
+            inbox: host.inbox,
+            apiKey: fb.apiKey || "",
+            projectId: fb.projectId || ""
+        }))));
+    }
+
+    function keepOutside(host) {
+        try {
+            sessionStorage.setItem("horseradish-outside-host", JSON.stringify(host));
+        } catch (err) {}
+    }
+
     function spec() {
         gather();
+        if (!state.inbox) {
+            state.inbox = makeInbox();
+        }
         const share = shareCode();
         const host = {
             name: state.name || "Unnamed Host",
@@ -455,6 +510,7 @@
             page: state.page,
             portrait: state.portrait,
             share: share,
+            inbox: state.inbox,
             peer: true,
             factory: "Horseradish Host Factory"
         };
@@ -473,49 +529,20 @@
         btn.textContent = state.editShare ? "Save this Host" : (signedIn ? "Save to the Portal" : "Login to the portal");
     }
 
+    function widgetSrc() {
+        try {
+            return new URL("widget.js", window.location.href).href;
+        } catch (err) {
+            return "https://horseradish.ai/widget.js";
+        }
+    }
+
     function embedHtml(host) {
-        const id = "hr-host-" + String(host.share || "host").replace(/[^A-Za-z0-9-]/g, "");
-        const payload = JSON.stringify({
-            name: host.name || "Host",
-            specialty: host.specialty || "",
-            share: host.share || "",
-            body: host.body || "square"
-        }).replace(/</g, "\\u003c");
         const label = String(host.name || "Host").replace(/--/g, "—");
         return [
             "<!-- Horseradish Host: " + label + " / " + host.share + " -->",
-            "<div id=\"" + id + "\"></div>",
-            "<style>",
-            "#" + id + "{position:fixed;right:20px;bottom:20px;z-index:2147483646;font-family:'Space Grotesk',Segoe UI,sans-serif;}",
-            "#" + id + " .hr-dock{display:flex;flex-direction:column;align-items:flex-end;gap:10px;}",
-            "#" + id + " .hr-card{display:none;width:220px;background:#fafaf8;color:#1a1a2e;border:2px solid #1a1a2e;box-shadow:6px 6px 0 #1a1a2e;padding:12px 14px;}",
-            "#" + id + ".is-open .hr-card{display:block;}",
-            "#" + id + " .hr-card strong{display:block;font-size:15px;margin:0 0 4px;}",
-            "#" + id + " .hr-card p{margin:0;color:#5c5a70;font-size:13px;line-height:1.35;}",
-            "#" + id + " .hr-avatar{width:72px;height:72px;border:2px solid #1a1a2e;background:#f5f0e8;box-shadow:5px 5px 0 #1a1a2e;cursor:pointer;position:relative;padding:0;}",
-            "#" + id + " .hr-avatar[data-body='circle']{border-radius:50%;}",
-            "#" + id + " .hr-avatar[data-body='square']{border-radius:14px;}",
-            "#" + id + " .hr-avatar[data-body='triangle']{width:0;height:0;border:0;background:transparent;box-shadow:none;border-left:36px solid transparent;border-right:36px solid transparent;border-bottom:64px solid #1a1a2e;}",
-            "#" + id + " .hr-avatar[data-body='triangle'] .hr-face{position:absolute;left:50%;top:22px;transform:translateX(-50%);width:42px;height:28px;background:#f5f0e8;clip-path:polygon(50% 0,100% 100%,0 100%);}",
-            "#" + id + " .hr-avatar[data-body='humanoid']{border-radius:50% 50% 42% 42%;height:78px;}",
-            "#" + id + " .hr-face{position:absolute;inset:18px 12px 16px;}",
-            "#" + id + " .hr-eye{position:absolute;top:8px;width:8px;height:8px;border-radius:50%;background:#1a1a2e;}",
-            "#" + id + " .hr-eye.l{left:8px;}",
-            "#" + id + " .hr-eye.r{right:8px;}",
-            "#" + id + " .hr-mouth{position:absolute;left:50%;bottom:4px;width:14px;height:6px;margin-left:-7px;border-bottom:2px solid #1a1a2e;border-radius:0 0 10px 10px;}",
-            "</style>",
-            "<script>(function(){",
-            "var h=" + payload + ";",
-            "var root=document.getElementById(" + JSON.stringify(id) + ");",
-            "if(!root||root.getAttribute('data-ready'))return;",
-            "root.setAttribute('data-ready','1');",
-            "root.innerHTML='<div class=\"hr-dock\"><div class=\"hr-card\"><strong></strong><p></p></div><button type=\"button\" class=\"hr-avatar\" aria-label=\"Open Host\"><span class=\"hr-face\"><i class=\"hr-eye l\"></i><i class=\"hr-eye r\"></i><i class=\"hr-mouth\"></i></span></button></div>';",
-            "root.querySelector('.hr-card strong').textContent=h.name;",
-            "root.querySelector('.hr-card p').textContent=h.specialty||h.share;",
-            "var btn=root.querySelector('.hr-avatar');",
-            "btn.setAttribute('data-body',h.body||'square');",
-            "btn.addEventListener('click',function(){root.classList.toggle('is-open');});",
-            "})();</script>"
+            "<div data-hr-b=\"" + packHost(host) + "\"></div>",
+            "<script src=\"" + widgetSrc() + "\"></script>"
         ].join("\n");
     }
 
@@ -728,7 +755,8 @@
             trigger: host.trigger,
             phrase: host.phrase,
             page: host.page,
-            portrait: host.portrait
+            portrait: host.portrait,
+            inbox: host.inbox
         });
         localStorage.setItem(BENCH_KEY, JSON.stringify(list.slice(0, 8)));
         renderBench();
@@ -748,7 +776,9 @@
     }
 
     function copyEmbed() {
-        const html = embedHtml(spec());
+        const host = spec();
+        keepOutside(host);
+        const html = embedHtml(host);
         embedPreview.hidden = false;
         embedPreview.textContent = html;
         if (navigator.clipboard && navigator.clipboard.writeText) {

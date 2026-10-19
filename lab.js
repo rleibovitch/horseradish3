@@ -206,6 +206,13 @@
                 paintFloor();
             });
         });
+        if (host.inbox) {
+            const open = document.createElement("a");
+            open.className = "os-mini";
+            open.href = "outside.html?in=" + encodeURIComponent(host.inbox);
+            open.textContent = "Outside";
+            box.appendChild(open);
+        }
         box.appendChild(wake);
         box.appendChild(release);
         actions.appendChild(box);
@@ -280,38 +287,31 @@
         });
     }
 
-    function fillTasks(list) {
+    function fillTasks(notes) {
         if (!taskList) {
             return;
         }
         taskList.innerHTML = "";
-        if (!list.length) {
+        if (!notes.length) {
             const item = document.createElement("li");
-            item.textContent = "No tasks yet. Place a Host on an asset, or edit one from the fleet.";
+            item.textContent = "No notes from the outside yet. Open a Host outside, write a note, and it lands here.";
             taskList.appendChild(item);
             return;
         }
-        list.forEach(function (host) {
+        notes.forEach(function (note) {
             const item = document.createElement("li");
             const copy = document.createElement("div");
             const name = document.createElement("strong");
-            name.textContent = host.name || "Unnamed Host";
-            const meta = document.createElement("p");
-            meta.className = "os-hint";
-            meta.textContent = isDeployed(host)
-                ? "Placed on an asset."
-                : "Waiting to be placed.";
+            name.textContent = note.name || "Host";
+            const text = document.createElement("p");
+            text.className = "os-hint";
+            text.textContent = note.text || "";
+            const time = document.createElement("time");
+            time.textContent = stamp(note.at);
             copy.appendChild(name);
-            copy.appendChild(meta);
-            const wake = document.createElement("button");
-            wake.type = "button";
-            wake.className = "os-mini";
-            wake.textContent = "Edit";
-            wake.addEventListener("click", function () {
-                Lab.wake(host);
-            });
+            copy.appendChild(text);
+            copy.appendChild(time);
             item.appendChild(copy);
-            item.appendChild(wake);
             taskList.appendChild(item);
         });
     }
@@ -361,14 +361,10 @@
             const active = hosts.filter(function (host) {
                 return statusOf(host) === "active";
             }).length;
-            const tasks = hosts.filter(isDeployed).length;
-
             document.getElementById("os-total").textContent = String(hosts.length);
             document.getElementById("os-active").textContent = String(active);
-            document.getElementById("os-tasks").textContent = String(tasks);
             document.getElementById("os-total-meta").textContent = hosts.length === 1 ? "on this shelf" : "on this shelf";
             document.getElementById("os-active-meta").textContent = active ? "Online currently running" : "none currently running";
-            document.getElementById("os-tasks-meta").textContent = tasks === 1 ? "placed on an asset" : "placed on an asset";
 
             if (!result.ok) {
                 current = null;
@@ -379,6 +375,8 @@
                 fillActivity(activityList, []);
                 fillLogs(logsList, []);
                 fillTasks([]);
+                document.getElementById("os-tasks").textContent = "0";
+                document.getElementById("os-tasks-meta").textContent = "from the outside";
                 if (buildBtn) {
                     buildBtn.textContent = "+ Create New Host";
                 }
@@ -406,8 +404,12 @@
                 fillActivity(activityList, shown.length ? shown : hosts);
             }
             fillLogs(logsList, logs);
-            fillTasks(shown.length ? shown : hosts);
-            return true;
+            return Lab.listNotes(hosts).then(function (notes) {
+                document.getElementById("os-tasks").textContent = String(notes.length);
+                document.getElementById("os-tasks-meta").textContent = notes.length === 1 ? "from the outside" : "from the outside";
+                fillTasks(notes);
+                return true;
+            });
         });
     }
 
