@@ -2649,7 +2649,17 @@ body.os-body {
     max-width: 30rem;
 }
 
-.os-reply-quote {
+.os-reply-label {
+    margin: 0 0 0.35rem;
+    color: #6b7280;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.os-reply-quote,
+.os-reply-spoken {
     margin: 0 0 0.9rem;
     padding: 0.7rem 0.85rem;
     background: #f9fafb;
@@ -2658,6 +2668,19 @@ body.os-body {
     color: #374151;
     font-size: 0.92rem;
     line-height: 1.4;
+}
+
+.os-reply-spoken {
+    background: #eff6ff;
+    border-left-color: #1d4ed8;
+    color: #111827;
+}
+
+#os-reply-spoken-wrap time {
+    display: block;
+    margin: -0.55rem 0 0.9rem;
+    color: #9ca3af;
+    font-size: 0.78rem;
 }
 
 .os-reply textarea {

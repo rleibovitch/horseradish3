@@ -489,12 +489,30 @@
         }
     }
 
+    function paintReplyThread(note) {
+        const quote = document.getElementById("os-reply-quote");
+        const wrap = document.getElementById("os-reply-spoken-wrap");
+        const spoken = document.getElementById("os-reply-spoken");
+        const spokenAt = document.getElementById("os-reply-spoken-at");
+        if (quote) {
+            quote.textContent = (note && note.text) || "";
+        }
+        if (wrap) {
+            wrap.hidden = !(note && note.reply);
+        }
+        if (spoken) {
+            spoken.textContent = (note && note.reply) || "";
+        }
+        if (spokenAt) {
+            spokenAt.textContent = note && note.reply ? stamp(note.repliedAt) : "";
+        }
+    }
+
     function openReply(note) {
         pendingReply = note;
         const dialog = document.getElementById("os-reply-ask");
         const title = document.getElementById("os-reply-ask-title");
         const hostEl = document.getElementById("os-reply-host");
-        const quote = document.getElementById("os-reply-quote");
         const box = document.getElementById("os-reply-text");
         const status = document.getElementById("os-reply-status");
         if (title) {
@@ -503,11 +521,9 @@
         if (hostEl) {
             hostEl.textContent = note.share || "Host";
         }
-        if (quote) {
-            quote.textContent = note.text || "";
-        }
+        paintReplyThread(note);
         if (box) {
-            box.value = note.reply || "";
+            box.value = "";
         }
         if (status) {
             status.textContent = "";
@@ -670,7 +686,17 @@
                     }
                     return;
                 }
-                closeReplyAsk();
+                pendingReply = Object.assign({}, note, {
+                    reply: result.reply,
+                    repliedAt: result.repliedAt
+                });
+                paintReplyThread(pendingReply);
+                if (box) {
+                    box.value = "";
+                }
+                if (status) {
+                    status.textContent = "It's in.";
+                }
                 paintFloor();
                 showView("tasks");
             });

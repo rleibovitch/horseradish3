@@ -9,7 +9,7 @@
     <meta name="description" content="The Horseradish Portal. Google gets you in. Your Host lives here.">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="shortcut icon" type="image/png" href="favicon.png">
-    <link rel="stylesheet" href="styles.css?v=reply">
+    <link rel="stylesheet" href="styles.css?v=reply-thread">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -281,13 +281,19 @@
         <p class="os-kicker">Reply</p>
         <h2 id="os-reply-ask-title">Reply through this Host</h2>
         <p class="os-hint" id="os-reply-host">Host</p>
+        <p class="os-reply-label">From the outside</p>
         <blockquote class="os-reply-quote" id="os-reply-quote"></blockquote>
+        <div id="os-reply-spoken-wrap" hidden>
+            <p class="os-reply-label">The Host</p>
+            <blockquote class="os-reply-spoken" id="os-reply-spoken"></blockquote>
+            <time id="os-reply-spoken-at"></time>
+        </div>
         <form id="os-reply-form">
             <label class="os-field-label" for="os-reply-text">The Host's reply</label>
             <textarea id="os-reply-text" name="reply" rows="4" maxlength="400" required placeholder="Write the reply."></textarea>
             <p class="os-hint" id="os-reply-status" role="status"></p>
             <div class="os-confirm-actions">
-                <button type="button" class="os-ghost" id="os-reply-cancel">Cancel</button>
+                <button type="button" class="os-ghost" id="os-reply-cancel">Close</button>
                 <button type="submit" class="os-create" id="os-reply-go">Send reply</button>
             </div>
         </form>
@@ -298,6 +304,6 @@
     <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
     <script src="lab-auth.js?v=reply"></script>
-    <script src="lab.js?v=reply"></script>
+    <script src="lab.js?v=reply-thread"></script>
 </body>
 </html>
