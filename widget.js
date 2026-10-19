@@ -1,4 +1,5 @@
 (function (root) {
+    // Public Firebase web key. Restrict HTTP referrers in Google Cloud to horseradish.ai/* so strangers cannot burn quota.
     const DEFAULTS = {
         apiKey: "AIzaSyCBXPavsl8G8q1rj6fLbavsYpxVTZK7VSU",
         projectId: "horseradish-hosts-993ea"
