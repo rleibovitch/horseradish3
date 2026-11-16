@@ -11,11 +11,11 @@
             }
         })();
     </script>
-    <title>Horseradish — Augmented Reality Lab</title>
-    <meta name="description" content="Horseradish is an artist-led augmented reality lab. Choose a look, make it yours, preview it, and manage it yourself.">
+    <title>Horseradish. Augment the ordinary</title>
+    <meta name="description" content="Horseradish. Augment the ordinary.">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="shortcut icon" type="image/png" href="favicon.png">
-    <link rel="stylesheet" href="styles.css?v=home-lab-20261116d">
+    <link rel="stylesheet" href="styles.css?v=home-lab-20261116e">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -35,8 +35,6 @@
                 <span></span>
             </button>
             <ul class="nav-menu" id="nav-menu">
-                <li><a class="nav-link" href="#looks">Experiences</a></li>
-                <li><a class="nav-link" href="#how">How it works</a></li>
                 <li><a class="nav-link" href="lab.html" data-sign-in>Sign in</a></li>
                 <li><a class="home-cta" href="lab.html?create=1">Create your experience</a></li>
             </ul>
@@ -46,167 +44,19 @@
     <main id="main">
         <section class="home-hero" id="top">
             <div class="home-copy">
-                <p class="home-eyebrow">HORSERADISH — AUGMENTED REALITY LAB</p>
-                <h1>CREATE. ACTIVATE. INSPIRE.</h1>
-                <p class="home-lede">Turn your brand into an experience. Choose a look, make it yours, and bring it to life.</p>
+                <h1>Horseradish.<br>Augment the ordinary</h1>
                 <div class="home-actions">
                     <a class="home-cta" href="lab.html?create=1">Create your experience</a>
-                    <a class="home-cta ghost" href="#looks">Explore the looks</a>
+                    <a class="home-cta ghost" href="lab.html">Sign in</a>
                 </div>
             </div>
-
-            <div class="home-demo">
-                <div class="home-stage-frame">
-                    <img id="home-poster" class="home-poster" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.png" alt="Sample tracking card. A printed picture the camera can recognize.">
-                    <div id="home-stage" class="home-stage" hidden></div>
-                </div>
-                <p class="home-stage-label" id="home-stage-status">Illustrative preview. The sample card is a real tracking image. The shapes are built-in looks, not a generated model, and this page does not open the camera.</p>
-                <div class="home-look-switch" role="group" aria-label="Built-in looks">
-                    <button type="button" data-look-choice="beacon" aria-pressed="false">Beacon</button>
-                    <button type="button" data-look-choice="monolith" aria-pressed="false">Monolith</button>
-                    <button type="button" data-look-choice="orb" aria-pressed="false">Orb</button>
-                    <button type="button" data-look-choice="portal" aria-pressed="false">Portal</button>
-                    <button type="button" data-look-choice="lantern" aria-pressed="true">Lantern</button>
-                </div>
-                <button type="button" class="home-cta" id="home-preview">Preview <span id="home-look-name">Lantern</span></button>
-            </div>
-        </section>
-
-        <section class="home-section" id="looks">
-            <div class="home-section-head">
-                <p class="home-eyebrow">Experiences</p>
-                <h2>Choose a look</h2>
-                <p>Five built-in 3D objects, a picture swap, or a .glb you already have. Selecting one opens the lab. Sign in, and that look is waiting on a test sign you can replace.</p>
-            </div>
-            <div class="look-grid">
-                <a class="look-card is-wide" href="lab.html?look=lantern">
-                    <span class="look-art" data-look="lantern" aria-hidden="true"></span>
-                    <span class="look-meta">
-                        <span class="look-kind">Built-in 3D</span>
-                        <h3>Lantern</h3>
-                        <p>A light on a post. This is the First Light demo: the sample card, and a lantern where the card is.</p>
-                        <span class="look-go">Use this look</span>
-                    </span>
-                </a>
-                <a class="look-card" href="lab.html?look=beacon">
-                    <span class="look-art" data-look="beacon" aria-hidden="true"></span>
-                    <span class="look-meta">
-                        <span class="look-kind">Built-in 3D</span>
-                        <h3>Beacon</h3>
-                        <p>A ring and a floating solid. The camera reveals this object when it sees your sign.</p>
-                        <span class="look-go">Use this look</span>
-                    </span>
-                </a>
-                <a class="look-card" href="lab.html?look=monolith">
-                    <span class="look-art" data-look="monolith" aria-hidden="true"></span>
-                    <span class="look-meta">
-                        <span class="look-kind">Built-in 3D</span>
-                        <h3>Monolith</h3>
-                        <p>A dark slab on a low base. A still object, not a scan of a product.</p>
-                        <span class="look-go">Use this look</span>
-                    </span>
-                </a>
-                <a class="look-card" href="lab.html?look=orb">
-                    <span class="look-art" data-look="orb" aria-hidden="true"></span>
-                    <span class="look-meta">
-                        <span class="look-kind">Built-in 3D</span>
-                        <h3>Orb</h3>
-                        <p>A sphere held in a ring. The preview can turn. The live view waits for the camera.</p>
-                        <span class="look-go">Use this look</span>
-                    </span>
-                </a>
-                <a class="look-card" href="lab.html?look=portal">
-                    <span class="look-art" data-look="portal" aria-hidden="true"></span>
-                    <span class="look-meta">
-                        <span class="look-kind">Built-in 3D</span>
-                        <h3>Portal</h3>
-                        <p>A dark disc inside a ring. It sits on the sign instead of replacing it with video.</p>
-                        <span class="look-go">Use this look</span>
-                    </span>
-                </a>
-                <a class="look-card" href="lab.html?look=picture">
-                    <span class="look-art" data-look="picture" aria-hidden="true"></span>
-                    <span class="look-meta">
-                        <span class="look-kind">Picture, not 3D</span>
-                        <h3>A different picture</h3>
-                        <p>The camera swaps the sign for an image you upload. Flat picture, not a model.</p>
-                        <span class="look-go">Use this look</span>
-                    </span>
-                </a>
-                <a class="look-card" href="lab.html?look=model">
-                    <span class="look-art" data-look="model" aria-hidden="true"></span>
-                    <span class="look-meta">
-                        <span class="look-kind">Your file</span>
-                        <h3>Your .glb</h3>
-                        <p>Bring a .glb under 40 MB. Horseradish places that file. It does not generate one.</p>
-                        <span class="look-go">Use this look</span>
-                    </span>
-                </a>
-            </div>
-        </section>
-
-        <section class="home-section" id="how">
-            <div class="home-section-head">
-                <p class="home-eyebrow">How it works</p>
-                <h2>Five steps, then it is yours.</h2>
-            </div>
-            <ol class="home-steps">
-                <li>
-                    <span>01</span>
-                    <h3>Choose a look</h3>
-                    <p>Pick Beacon, Monolith, Orb, Portal, or Lantern, swap in a picture, or bring a .glb you already exported.</p>
-                </li>
-                <li>
-                    <span>02</span>
-                    <h3>Make it yours</h3>
-                    <p>Name it, add the sign a camera should recognize, then set the size, color, and whether that sign stays visible.</p>
-                </li>
-                <li>
-                    <span>03</span>
-                    <h3>Preview it live</h3>
-                    <p>The editor shows a 3D preview on the page. Compile the tracking file, then open the camera when you want the live view.</p>
-                </li>
-                <li>
-                    <span>04</span>
-                    <h3>Pay and publish</h3>
-                    <p>There is no payment step yet. Save keeps the model in this browser for your Google account, and Copy code gives you an embed snippet.</p>
-                </li>
-                <li>
-                    <span>05</span>
-                    <h3>Update / edit / modify</h3>
-                    <p>Return to the lab, search the shelf, edit the sign or the look, or delete the model. A log on this browser records creates, compiles, and camera opens.</p>
-                </li>
-            </ol>
-        </section>
-
-        <section class="home-section home-own" id="account">
-            <div>
-                <p class="home-eyebrow">Your shelf</p>
-                <h2>Come back and change it.</h2>
-                <p class="home-lede">Sign in with Google. The models you make stay in this browser for that account.</p>
-            </div>
-            <ul class="home-own-list">
-                <li>Edit the name, the sign, the look, the size, and the color.</li>
-                <li>Compile tracking, download the tracking file, or copy the embed code.</li>
-                <li>Read the log of when a model was created, compiled, and opened by a camera.</li>
-                <li>Sign out to end the session. The models stay on this browser until you delete them.</li>
-            </ul>
-            <a class="home-cta" href="lab.html">Sign in</a>
-        </section>
-
-        <section class="home-close" id="start">
-            <p class="home-eyebrow">CREATE · ACTIVATE · INSPIRE</p>
-            <h2>Your next experience starts here.</h2>
-            <a class="home-cta" href="lab.html?create=1">Create your experience</a>
         </section>
     </main>
 
     <footer class="footer">
         <div class="container footer-content">
-            <p>Horseradish. An augmented reality lab.</p>
+            <p>Horseradish. Augment the ordinary</p>
             <ul>
-                <li><a href="#looks">Experiences</a></li>
-                <li><a href="#how">How it works</a></li>
                 <li><a href="lab.html">Sign in</a></li>
                 <li><a href="contact.html">Contact</a></li>
                 <li><a href="host.html">Hosts</a></li>
@@ -217,6 +67,6 @@
         </div>
     </footer>
 
-    <script type="module" src="home-stage.js?v=home-lab-20261116b"></script>
+    <script type="module" src="home-stage.js?v=home-lab-20261116e"></script>
 </body>
 </html>
