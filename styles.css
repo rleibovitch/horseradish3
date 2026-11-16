@@ -3175,7 +3175,7 @@ body.home-lab .home-eyebrow {
 
 body.home-lab h1 {
     font-size: clamp(3.1rem, 8vw, 6.6rem);
-    max-width: 11ch;
+    max-width: 9ch;
 }
 
 body.home-lab .home-lede {
