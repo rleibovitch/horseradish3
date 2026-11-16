@@ -78,7 +78,7 @@ function message(error) {
     return "The camera did not respond. Close other apps that are using it, then try again.";
   }
   if (error.name === "QuotaExceededError") {
-    return "This browser is out of space for AfterImages. Delete a saved set and try again.";
+    return "This browser is out of space for experiences. Delete a saved one and try again.";
   }
   return error.message || "Something went wrong.";
 }
@@ -109,7 +109,7 @@ function defaultReplacement() {
 
 function prettyName(filename) {
   const base = filename.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
-  return base || "Sign";
+  return base || "Target image";
 }
 
 function urlFor(blob) {
@@ -292,11 +292,11 @@ function allEvents() {
   state.sets.forEach((set) => {
     const events = Array.isArray(set.events) ? set.events : [];
     if (!events.length) {
-      rows.push({ at: set.updated || Date.now(), action: "saved", name: set.name || "Model" });
+      rows.push({ at: set.updated || Date.now(), action: "saved", name: set.name || "Experience" });
       return;
     }
     events.forEach((event) => {
-      rows.push({ at: event.at, action: event.action, name: set.name || "Model" });
+      rows.push({ at: event.at, action: event.action, name: set.name || "Experience" });
     });
   });
   rows.sort((a, b) => b.at - a.at);
@@ -304,7 +304,7 @@ function allEvents() {
 }
 
 function eventCopy(event) {
-  const name = event.name || "Model";
+  const name = event.name || "Experience";
   if (event.action === "seen") return `${name} unlocked`;
   if (event.action === "compiled") return `${name} compiled`;
   if (event.action === "created") return `${name} created`;
@@ -321,7 +321,7 @@ function activityList(limit) {
   const events = allEvents();
   const shown = typeof limit === "number" ? events.slice(0, limit) : events;
   if (!shown.length) {
-    return `<li class="ai-log-empty">No activity yet. Create a model and it will show here.</li>`;
+    return `<li class="ai-log-empty">No activity yet. Create an experience and it will show here.</li>`;
   }
   return shown.map((event) => `
     <li>
@@ -357,14 +357,14 @@ async function copyText(value) {
   box.select();
   const ok = document.execCommand("copy");
   box.remove();
-  if (!ok) throw new Error("Could not copy the model code.");
+  if (!ok) throw new Error("Could not copy the embed code.");
 }
 
 function modelCode(set) {
   const url = new URL(window.location.href);
   url.search = "";
   url.hash = `model=${set.id}`;
-  return `<div data-afterimage="${set.id}" data-name="${String(set.name || "Model").replace(/"/g, "")}"></div>\n${url.href}`;
+  return `<div data-afterimage="${set.id}" data-name="${String(set.name || "Experience").replace(/"/g, "")}"></div>\n${url.href}`;
 }
 
 function recordImpression(name) {
@@ -430,7 +430,7 @@ function renderLibrary() {
           <div class="os-host">
             <span class="os-host-mark" data-body="${set.demo === DEMO_ID ? "lantern" : "square"}">${esc(String(set.name || "M").charAt(0).toUpperCase())}</span>
             <div>
-              <strong>${esc(set.name || "Untitled model")}</strong>
+              <strong>${esc(set.name || "Untitled experience")}</strong>
               <small>ID: ${esc(shortId(set.id))}</small>
             </div>
           </div>
@@ -447,25 +447,25 @@ function renderLibrary() {
       </tr>`;
   }).join("");
   const emptyCopy = fresh
-    ? "No models yet. Create your first AfterImage to get started."
-    : "No models match that search.";
+    ? "No experiences yet. Create your first experience to get started."
+    : "No experiences match that search.";
 
   view.innerHTML = `
     <div class="os-head">
       <div>
-        <h1>${fresh ? "Create your first AfterImage" : "Models"}</h1>
+        <h1>${fresh ? "Create your first experience" : "Experiences"}</h1>
         <p>${fresh
-          ? "Put a sign where someone can stand, then choose the experience the camera unlocks."
-          : "A sign gets someone in the door. The camera unlocks the experience."}</p>
+          ? "Add a target image, add the content a camera reveals, then publish."
+          : "A target image gets someone in the door. The camera reveals the content."}</p>
       </div>
-      <button type="button" class="os-create" data-action="new-set">${fresh ? "Create your first AfterImage" : "+ Create Model"}</button>
+      <button type="button" class="os-create" data-action="new-set">${fresh ? "Create your first experience" : "+ Create experience"}</button>
     </div>
     ${wonderBanner()}
     ${state.error ? `<p class="ai-error" role="alert">${esc(state.error)}</p>` : ""}
     <div class="os-stats">
       <article class="os-stat">
         <div>
-          <p class="os-stat-label">Total Models</p>
+          <p class="os-stat-label">Total experiences</p>
           <p class="os-stat-value">${state.sets.length}</p>
           <p class="os-stat-meta">on this shelf</p>
         </div>
@@ -475,7 +475,7 @@ function renderLibrary() {
       </article>
       <article class="os-stat">
         <div>
-          <p class="os-stat-label">Active Models</p>
+          <p class="os-stat-label">Active experiences</p>
           <p class="os-stat-value">${active}</p>
           <p class="os-stat-meta${active ? " is-live" : ""}">${active ? "ready for a camera" : "none ready for a camera"}</p>
         </div>
@@ -497,7 +497,7 @@ function renderLibrary() {
     <div class="os-split">
       <section class="os-panel">
         <div class="os-panel-head">
-          <h2>Active Models</h2>
+          <h2>Active experiences</h2>
           ${fresh ? "" : `<button type="button" class="os-text-link" data-action="show-all">View all</button>`}
         </div>
         ${rows ? `
@@ -505,8 +505,8 @@ function renderLibrary() {
             <table class="os-table">
               <thead>
                 <tr>
-                  <th>Model</th>
                   <th>Experience</th>
+                  <th>Content</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -532,7 +532,7 @@ function renderLogs() {
     <div class="os-head">
       <div>
         <h1>Logs</h1>
-        <p>When a model was created, compiled, and unlocked by a camera.</p>
+        <p>When an experience was created, published, and unlocked by a camera.</p>
       </div>
     </div>
     ${state.error ? `<p class="ai-error" role="alert">${esc(state.error)}</p>` : ""}
@@ -554,16 +554,17 @@ function editorPanel(target) {
 
   return `
     <div class="os-panel ai-panel">
+      <p class="os-field-label">Add content</p>
       <div class="ai-panel-head">
         <label class="ai-name grow">
-          <span class="os-field-label">Sign</span>
+          <span class="os-field-label">Name</span>
           <input data-field="target-name" value="${esc(target.name)}" maxlength="60">
         </label>
-        <button type="button" class="os-ghost" data-action="show-sign">Show sign</button>
+        <button type="button" class="os-ghost" data-action="show-sign">Show image</button>
         <button type="button" class="os-ghost os-delete" data-action="remove-target">Remove</button>
       </div>
-      ${report ? `<p class="ai-quality ${report.tone}"><strong>${report.label}.</strong> ${esc(report.hint)}</p>` : `<p class="os-hint">Compile to score how well this picture will track.</p>`}
-      <div class="ai-switch" role="group" aria-label="Replacement">
+      ${report ? `<p class="ai-quality ${report.tone}"><strong>${report.label}.</strong> ${esc(report.hint)}</p>` : `<p class="os-hint">Publish to score how well this image will track.</p>`}
+      <div class="ai-switch" role="group" aria-label="Add content">
         <button type="button" class="os-ghost" data-action="type" data-type="object" aria-pressed="${replacement.type === "object"}">3D object</button>
         <button type="button" class="os-ghost" data-action="type" data-type="image" aria-pressed="${replacement.type === "image"}">Different picture</button>
         <button type="button" class="os-ghost" data-action="type" data-type="model" aria-pressed="${replacement.type === "model"}">Your 3D file</button>
@@ -575,7 +576,7 @@ function editorPanel(target) {
         <label>Size <input data-field="scale" type="range" min="0.35" max="1.6" step="0.05" value="${clampScale(replacement.scale)}"></label>
         <label>Color <input data-field="tint" type="color" value="${hex(replacement.tint, "#ff5a1f")}"></label>
         <label>Cover <input data-field="plinth" type="color" value="${hex(replacement.plinth, "#1a1612")}"></label>
-        ${replacement.type === "object" || replacement.type === "model" ? `<label class="ai-check"><input data-field="hide" type="checkbox" ${replacement.hideSign ? "checked" : ""}> Hide the printed sign</label>` : ""}
+        ${replacement.type === "object" || replacement.type === "model" ? `<label class="ai-check"><input data-field="hide" type="checkbox" ${replacement.hideSign ? "checked" : ""}> Hide the target image</label>` : ""}
       </div>
     </div>`;
 }
@@ -591,15 +592,14 @@ function renderEditor() {
         <span>${esc(target.name)}</span>
       </button>`;
   }).join("");
-  const ready = set.mindBlob && !set.mindDirty;
   const first = !set.targets.length && !state.sets.some((item) => item.targets.length);
 
   view.innerHTML = `
     <div class="os-head">
       <div>
-        <p class="os-kicker">AfterImage</p>
-        <h1>${first ? "Create your first AfterImage" : "Edit AfterImage"}</h1>
-        <p>Add a sign, then choose what the camera reveals.</p>
+        <p class="os-kicker">Experience</p>
+        <h1>${first ? "Create your first experience" : "Edit experience"}</h1>
+        <p>Add a target image, add the content, then publish.</p>
       </div>
       <button type="button" class="os-ghost" data-action="back-library">Back</button>
     </div>
@@ -610,19 +610,23 @@ function renderEditor() {
           <span class="os-field-label">Name</span>
           <input data-field="set-name" value="${esc(set.name)}" maxlength="60">
         </label>
-        <div class="ai-sign-list" id="ai-sign-list">${signs || `<p class="os-hint">Add an image, or use the test sign.</p>`}</div>
+        <p class="os-field-label">Target image</p>
+        <div class="ai-sign-list" id="ai-sign-list">${signs || `<p class="os-hint">Add a target image, or use the test image.</p>`}</div>
         <div class="ai-stack">
-          <button type="button" class="os-ghost" data-action="add-signs">Add signs</button>
-          <button type="button" class="os-ghost" data-action="use-demo">Use the test sign</button>
-          <button type="button" class="os-create" data-action="open-draft">${ready ? "Open camera" : "Compile and open camera"}</button>
-          ${!ready && set.targets.length ? `<button type="button" class="os-ghost" data-action="prepare-tracking">Prepare tracking without camera</button>` : ""}
+          <button type="button" class="os-ghost" data-action="add-signs">Add image</button>
+          <button type="button" class="os-ghost" data-action="use-demo">Use the test image</button>
+          <button type="button" class="os-create" data-action="publish">Publish experience</button>
+          <button type="button" class="os-ghost" data-action="open-draft">Open camera</button>
           ${ready ? `<button type="button" class="os-ghost" data-action="download-mind">Download tracking file</button>` : ""}
-          <button type="button" class="os-ghost os-delete" data-action="delete-draft">Delete AfterImage</button>
+          <button type="button" class="os-ghost os-delete" data-action="delete-draft">Delete experience</button>
         </div>
       </aside>
       <div class="ai-preview-column">
         <div class="ai-preview" id="ai-preview"></div>
-        ${current ? editorPanel(current) : `<div class="os-panel"><p class="os-hint">Add a sign to choose its replacement.</p></div>`}
+        ${state.copiedId === set.id ? (state.copiedOk
+          ? `<p class="os-hint">Saved in this browser. The embed code is copied.</p>`
+          : `<pre class="ai-code" id="ai-code">${esc(state.copiedCode || "")}</pre><p class="os-hint">Saved in this browser. The browser blocked automatic copy. The code above is selected.</p>`) : ""}
+        ${current ? editorPanel(current) : `<div class="os-panel"><p class="os-field-label">Add content</p><p class="os-hint">Add a target image before choosing the content.</p></div>`}
       </div>
     </section>`;
 
@@ -694,14 +698,14 @@ async function ensureCompiler() {
 }
 
 async function compile(set) {
-  if (!set.targets.length) throw new Error("Add a sign first.");
+  if (!set.targets.length) throw new Error("Add a target image first.");
   const Compiler = await ensureCompiler();
-  showBusy("Reading trackable detail. The first sign can take half a minute.", 0);
+  showBusy("Reading the target image. The first one can take half a minute.", 0);
   const images = [];
   for (const target of set.targets) images.push(await blobToImage(target.imageBlob));
   const compiler = new Compiler();
   const data = await compiler.compileImageTargets(images, (progress) => {
-    showBusy("Reading trackable detail. The first sign can take half a minute.", progress);
+    showBusy("Reading the target image. The first one can take half a minute.", progress);
   });
   data.forEach((entry, index) => {
     set.targets[index].featureCount = featureCount(entry);
@@ -785,7 +789,7 @@ function exitStage() {
 async function openCameraFor(set, sample = false) {
   state.error = "";
   state.returnView = state.view === "stage" ? state.returnView : state.view;
-  if (!sample && !set.targets.length) throw new Error("Add a sign first.");
+  if (!sample && !set.targets.length) throw new Error("Add a target image first.");
   await ensureAR();
   if (!sample && (set.mindDirty || !set.mindBlob)) await compile(set);
   showBusy("Asking for the camera…", null);
@@ -967,7 +971,7 @@ async function onClick(event) {
     await ensureAR();
     const set = {
       id: crypto.randomUUID(),
-      name: "Untitled AfterImage",
+      name: "Untitled experience",
       updated: Date.now(),
       mindDirty: true,
       mindBlob: null,
@@ -1095,6 +1099,33 @@ async function onClick(event) {
 
   if (action === "use-demo") {
     await addDemo();
+    return;
+  }
+
+  if (action === "publish") {
+    if (!state.draft.targets.length) throw new Error("Add a target image first.");
+    if (!(state.draft.mindBlob && !state.draft.mindDirty)) await compile(state.draft);
+    const code = modelCode(state.draft);
+    state.copiedId = state.draft.id;
+    state.copiedCode = code;
+    state.error = "";
+    try {
+      await copyText(code);
+      state.copiedOk = true;
+    } catch (error) {
+      state.copiedOk = false;
+    }
+    hideBusy();
+    state.view = "editor";
+    render();
+    const pre = document.getElementById("ai-code");
+    if (pre) {
+      const range = document.createRange();
+      range.selectNodeContents(pre);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
     return;
   }
 
@@ -1237,7 +1268,7 @@ async function startBlank() {
   await ensureAR();
   state.draft = {
     id: crypto.randomUUID(),
-    name: "Untitled AfterImage",
+    name: "Untitled experience",
     updated: Date.now(),
     mindDirty: true,
     mindBlob: null,
@@ -1298,7 +1329,7 @@ async function open() {
   if (!owner) {
     state.sets = [];
     state.ready = false;
-    state.error = "Sign in again before creating an AfterImage.";
+    state.error = "Sign in again before creating an experience.";
     render();
     return;
   }

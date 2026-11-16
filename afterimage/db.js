@@ -31,7 +31,7 @@ export async function listSets(owner) {
 
 export async function saveSet(set, owner) {
   if (!set || !owner) {
-    throw new Error("Sign in before saving an AfterImage.");
+    throw new Error("Sign in before saving an experience.");
   }
   const db = await openDb();
   set.owner = owner;

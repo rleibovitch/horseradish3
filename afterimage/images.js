@@ -198,7 +198,7 @@ export async function makeDemoSign() {
   ctx.textAlign = "left";
   ctx.fillText("KNOWN SIGN  ·  01", 72, 78);
   ctx.font = "650 54px Georgia, serif";
-  ctx.fillText("AfterImage", 72, 128);
+  ctx.fillText("Experience", 72, 128);
 
   ctx.fillStyle = accent;
   ctx.beginPath();

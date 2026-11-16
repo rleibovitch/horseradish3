@@ -739,7 +739,7 @@
                     resolve(run());
                     return;
                 }
-                showNote("AfterImage could not open. Refresh the page.");
+                showNote("The editor could not open. Refresh the page.");
                 resolve();
             }
             document.addEventListener("afterimage-ready", finish, { once: true });
@@ -761,7 +761,7 @@
         return whenStudio(function () {
             return window.HorseradishAfterImage.open();
         }).catch(function (err) {
-            showNote(err && err.message ? err.message : "AfterImage could not open.");
+            showNote(err && err.message ? err.message : "The editor could not open.");
         });
     }
 

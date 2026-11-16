@@ -3189,15 +3189,6 @@ body.home-lab .home-lede {
     color: #3d3832;
 }
 
-body.home-lab .home-where {
-    margin-top: 0.85rem;
-    max-width: 38ch;
-    font-family: "IBM Plex Mono", var(--mono);
-    font-size: 0.82rem;
-    line-height: 1.5;
-    color: #3d3832;
-}
-
 body.home-lab .home-actions {
     display: flex;
     flex-wrap: wrap;
