@@ -984,7 +984,7 @@
             showNote("Give it a share code.");
             return;
         }
-        window.location.href = "index.html?wake=" + encodeURIComponent(key) + "#factory";
+        window.location.href = "host.html?wake=" + encodeURIComponent(key) + "#factory";
     }
 
     if (p2p) {

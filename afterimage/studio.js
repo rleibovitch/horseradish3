@@ -1211,6 +1211,83 @@ function accountOwner() {
   return user && user.sub ? String(user.sub) : "";
 }
 
+const HOME_LOOKS = {
+  beacon: { type: "object", preset: "beacon", name: "Beacon", tint: "#ff5a1f", plinth: "#1a1612" },
+  monolith: { type: "object", preset: "monolith", name: "Monolith", tint: "#ff5a1f", plinth: "#1a1612" },
+  orb: { type: "object", preset: "orb", name: "Orb", tint: "#ff5a1f", plinth: "#1a1612" },
+  portal: { type: "object", preset: "portal", name: "Portal", tint: "#ff5a1f", plinth: "#1a1612" },
+  lantern: { type: "object", preset: "lantern", name: "Lantern", tint: "#f6c56b", plinth: "#140e09" },
+  picture: { type: "image", name: "Picture", tint: "#ff5a1f", plinth: "#1a1612" },
+  model: { type: "model", name: "Your model", tint: "#ff5a1f", plinth: "#1a1612" },
+};
+
+function takeHomeEntry() {
+  const params = new URLSearchParams(location.search);
+  const look = HOME_LOOKS[String(params.get("look") || "").toLowerCase()] || null;
+  const create = params.get("create") === "1";
+  if (!look && !create) return null;
+  const url = new URL(location.href);
+  url.searchParams.delete("look");
+  url.searchParams.delete("create");
+  history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  return { look, create };
+}
+
+async function startBlank() {
+  await ensureAR();
+  state.draft = {
+    id: crypto.randomUUID(),
+    name: "Untitled AfterImage",
+    updated: Date.now(),
+    mindDirty: true,
+    mindBlob: null,
+    targets: [],
+    owner,
+  };
+  state.selectedId = null;
+  state.error = "";
+  state.view = "editor";
+}
+
+async function startFromLook(look) {
+  await ensureAR();
+  showBusy("Opening that look…", null);
+  const image = await makeDemoSign();
+  const replacement = {
+    ...defaultReplacement(),
+    type: look.type,
+    tint: look.tint,
+    plinth: look.plinth,
+  };
+  if (look.preset) replacement.preset = look.preset;
+  const target = {
+    id: crypto.randomUUID(),
+    name: "Test sign",
+    width: image.width,
+    height: image.height,
+    featureCount: null,
+    imageBlob: image.blob,
+    replacement,
+  };
+  const set = {
+    id: crypto.randomUUID(),
+    name: look.name,
+    updated: Date.now(),
+    mindDirty: true,
+    mindBlob: null,
+    targets: [target],
+    owner,
+  };
+  pushEvent(set, "created");
+  await saveSet(set, owner);
+  upsert(set);
+  state.draft = set;
+  state.selectedId = target.id;
+  state.error = "";
+  state.view = "editor";
+  hideBusy();
+}
+
 async function open() {
   if (!view) return;
   owner = accountOwner();
@@ -1232,6 +1309,17 @@ async function open() {
     state.sets = [];
     state.ready = false;
     state.error = message(error);
+  }
+  const entry = takeHomeEntry();
+  if (entry) {
+    try {
+      if (entry.look) await startFromLook(entry.look);
+      else await startBlank();
+    } catch (error) {
+      hideBusy();
+      state.error = message(error);
+      state.view = "library";
+    }
   }
   render();
   ensureAR().catch((error) => {

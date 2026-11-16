@@ -3054,3 +3054,565 @@ body.ai-live { overflow: hidden; }
     .ai-preview { height: 260px; }
     .ai-sample { grid-template-columns: 1fr; }
 }
+
+body.home-lab {
+    background: #f3efe6;
+    color: #14120f;
+}
+
+body.home-lab .nav-wrap {
+    top: 0;
+    padding: 0;
+}
+
+body.home-lab .navbar {
+    width: min(1180px, 100%);
+    margin: 0 auto;
+    border: 0;
+    border-bottom: 1px solid rgba(20, 18, 15, 0.14);
+    border-radius: 0;
+    box-shadow: none;
+    background: rgba(243, 239, 230, 0.92);
+    backdrop-filter: blur(16px);
+    padding: 0.85rem 1.25rem;
+}
+
+body.home-lab .nav-logo {
+    font-size: 1.05rem;
+}
+
+body.home-lab .nav-link {
+    font-family: "Space Grotesk", var(--font);
+    font-weight: 600;
+}
+
+body.home-lab .nav-link:hover,
+body.home-lab .nav-link:focus-visible {
+    color: #9a3412;
+}
+
+body.home-lab .home-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 0.75rem 1.15rem;
+    background: #14120f;
+    color: #f6f1e8;
+    border: 2px solid #14120f;
+    text-decoration: none;
+    font-family: "Space Grotesk", var(--font);
+    gap: 0.35rem;
+    font-weight: 600;
+    font-size: 0.98rem;
+    letter-spacing: -0.02em;
+    cursor: pointer;
+}
+
+body.home-lab .home-cta:hover,
+body.home-lab .home-cta:focus-visible {
+    background: #9a3412;
+    border-color: #9a3412;
+    color: #fffaf3;
+}
+
+body.home-lab .home-cta.ghost {
+    background: transparent;
+    color: #14120f;
+}
+
+body.home-lab .home-cta.ghost:hover,
+body.home-lab .home-cta.ghost:focus-visible {
+    background: #14120f;
+    color: #f6f1e8;
+}
+
+body.home-lab a:focus-visible,
+body.home-lab button:focus-visible {
+    outline: 3px solid #9a3412;
+    outline-offset: 3px;
+}
+
+body.home-lab .home-cta:disabled {
+    opacity: 0.55;
+    cursor: progress;
+}
+
+body.home-lab h1,
+body.home-lab h2,
+body.home-lab h3 {
+    font-family: "Archivo Black", var(--display);
+    font-weight: 400;
+    letter-spacing: -0.045em;
+    line-height: 0.92;
+    max-width: none;
+    margin: 0;
+    text-align: left;
+    color: #14120f;
+}
+
+body.home-lab .home-hero,
+body.home-lab .home-section,
+body.home-lab .home-close {
+    width: min(1180px, calc(100% - 2.5rem));
+    margin: 0 auto;
+}
+
+body.home-lab .home-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+    gap: clamp(1.5rem, 4vw, 4rem);
+    align-items: center;
+    padding: clamp(2.5rem, 7vw, 6.5rem) 0 3rem;
+}
+
+body.home-lab .home-eyebrow {
+    font-family: "IBM Plex Mono", var(--mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #9a3412;
+    margin-bottom: 1rem;
+}
+
+body.home-lab h1 {
+    font-size: clamp(3.1rem, 7vw, 6.4rem);
+    max-width: 8ch;
+}
+
+body.home-lab .home-lede {
+    max-width: 36ch;
+    margin-top: 1.25rem;
+    font-size: clamp(1.15rem, 2vw, 1.4rem);
+    line-height: 1.45;
+    color: #3d3832;
+}
+
+body.home-lab .home-where {
+    margin-top: 0.85rem;
+    max-width: 38ch;
+    font-family: "IBM Plex Mono", var(--mono);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: #3d3832;
+}
+
+body.home-lab .home-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+}
+
+body.home-lab .home-demo {
+    display: grid;
+    gap: 0.85rem;
+}
+
+body.home-lab .home-stage-frame {
+    position: relative;
+    min-height: 420px;
+    background: #14120f;
+    overflow: hidden;
+}
+
+body.home-lab .home-poster,
+body.home-lab .home-stage,
+body.home-lab .home-stage a-scene {
+    width: 100%;
+    height: 420px;
+    display: block;
+    object-fit: contain;
+    background: #14120f;
+}
+
+body.home-lab .home-poster[hidden],
+body.home-lab .home-stage[hidden] {
+    display: none;
+}
+
+body.home-lab .home-stage-label {
+    font-size: 0.92rem;
+    line-height: 1.45;
+    color: #3d3832;
+}
+
+body.home-lab .home-look-switch {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+body.home-lab .home-look-switch button {
+    min-height: 44px;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid rgba(20, 18, 15, 0.28);
+    background: transparent;
+    color: #14120f;
+    font: 600 0.88rem "Space Grotesk", var(--font);
+    cursor: pointer;
+}
+
+body.home-lab .home-look-switch button[aria-pressed="true"] {
+    background: #14120f;
+    color: #f6f1e8;
+    border-color: #14120f;
+}
+
+body.home-lab .home-section,
+body.home-lab .home-close {
+    scroll-margin-top: 5.5rem;
+}
+
+body.home-lab .home-section {
+    padding: clamp(3rem, 7vw, 5.5rem) 0;
+}
+
+body.home-lab .home-section-head {
+    max-width: 40rem;
+    margin-bottom: 2rem;
+}
+
+body.home-lab .home-section h2,
+body.home-lab .home-close h2 {
+    font-size: clamp(2.4rem, 5vw, 4.4rem);
+    max-width: 12ch;
+}
+
+body.home-lab .home-section-head p:last-child {
+    margin-top: 1rem;
+    max-width: 46ch;
+    color: #3d3832;
+    font-size: 1.05rem;
+    line-height: 1.5;
+}
+
+body.home-lab .look-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+body.home-lab .look-card {
+    display: grid;
+    grid-template-rows: 220px auto;
+    min-height: 100%;
+    background: #fffaf3;
+    color: inherit;
+    text-decoration: none;
+    border: 1px solid rgba(20, 18, 15, 0.14);
+}
+
+body.home-lab .look-card.is-wide {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
+    grid-template-rows: 320px;
+}
+
+body.home-lab .look-card.is-wide .look-meta {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+body.home-lab .look-art {
+    display: block;
+    background:
+        radial-gradient(circle at 70% 30%, rgba(255, 90, 31, 0.45), transparent 28%),
+        #14120f;
+    position: relative;
+    overflow: hidden;
+}
+
+body.home-lab .look-art::before,
+body.home-lab .look-art::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+}
+
+body.home-lab .look-art[data-look="lantern"]::before {
+    width: 8px;
+    height: 46%;
+    background: #2c261f;
+    transform: translate(-50%, -10%);
+}
+
+body.home-lab .look-art[data-look="lantern"]::after {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #f6c56b;
+    box-shadow: 0 0 40px #f6c56b;
+    transform: translate(-50%, -130%);
+}
+
+body.home-lab .look-art[data-look="beacon"]::before {
+    width: 150px;
+    height: 150px;
+    border: 4px solid #ff5a1f;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+body.home-lab .look-art[data-look="beacon"]::after {
+    width: 54px;
+    height: 54px;
+    background: #ff5a1f;
+    transform: translate(-50%, -70%) rotate(45deg);
+}
+
+body.home-lab .look-art[data-look="monolith"]::before {
+    width: 34%;
+    height: 18px;
+    background: #ff5a1f;
+    transform: translate(-50%, 90%);
+}
+
+body.home-lab .look-art[data-look="monolith"]::after {
+    width: 18%;
+    height: 52%;
+    background: #3a3128;
+    transform: translate(-50%, -60%);
+}
+
+body.home-lab .look-art[data-look="orb"]::before {
+    width: 160px;
+    height: 28px;
+    border: 4px solid #ff5a1f;
+    border-radius: 50%;
+    transform: translate(-50%, -50%) rotate(-18deg);
+}
+
+body.home-lab .look-art[data-look="orb"]::after {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #ff5a1f;
+    transform: translate(-50%, -50%);
+}
+
+body.home-lab .look-art[data-look="portal"]::before {
+    width: 170px;
+    height: 170px;
+    border: 8px solid #ff5a1f;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+body.home-lab .look-art[data-look="portal"]::after {
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    background: #120e0b;
+    box-shadow: inset 0 0 0 8px #ff5a1f;
+    transform: translate(-50%, -50%);
+}
+
+body.home-lab .look-art[data-look="picture"]::before {
+    width: 62%;
+    height: 70%;
+    background:
+        linear-gradient(135deg, transparent 46%, #f6f1e8 46% 54%, transparent 54%),
+        #c4552a;
+    transform: translate(-50%, -50%);
+}
+
+body.home-lab .look-art[data-look="model"]::before {
+    width: 0;
+    height: 0;
+    border-left: 48px solid transparent;
+    border-right: 48px solid transparent;
+    border-bottom: 84px solid #ff5a1f;
+    transform: translate(-50%, -70%);
+}
+
+body.home-lab .look-art[data-look="model"]::after {
+    width: 70px;
+    height: 16px;
+    background: #f6c56b;
+    transform: translate(-50%, 80%);
+}
+
+body.home-lab .look-meta {
+    padding: 1.1rem 1.15rem 1.25rem;
+}
+
+body.home-lab .look-kind {
+    display: inline-block;
+    margin-bottom: 0.55rem;
+    font-family: "IBM Plex Mono", var(--mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9a3412;
+}
+
+body.home-lab .look-card h3 {
+    font-family: "Space Grotesk", var(--font);
+    font-weight: 600;
+    font-size: 1.55rem;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+}
+
+body.home-lab .look-card p {
+    margin: 0.55rem 0 0.9rem;
+    color: #3d3832;
+    line-height: 1.45;
+}
+
+body.home-lab .look-go {
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+}
+
+body.home-lab .look-card:hover .look-go,
+body.home-lab .look-card:focus-visible .look-go {
+    color: #9a3412;
+}
+
+body.home-lab .home-steps {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+}
+
+body.home-lab .home-steps li {
+    grid-column: span 2;
+    padding-top: 1rem;
+    border-top: 2px solid #14120f;
+}
+
+body.home-lab .home-steps li:nth-child(4),
+body.home-lab .home-steps li:nth-child(5) {
+    grid-column: span 3;
+}
+
+body.home-lab .home-steps span {
+    display: block;
+    margin-bottom: 0.8rem;
+    font-family: "IBM Plex Mono", var(--mono);
+    font-weight: 600;
+    color: #9a3412;
+}
+
+body.home-lab .home-steps h3 {
+    font-family: "Space Grotesk", var(--font);
+    font-weight: 600;
+    font-size: 1.35rem;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    margin-bottom: 0.55rem;
+}
+
+body.home-lab .home-steps p {
+    color: #3d3832;
+    line-height: 1.45;
+}
+
+body.home-lab .home-own {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 2rem 3rem;
+    align-items: start;
+}
+
+body.home-lab .home-own .home-cta {
+    grid-column: 1;
+    justify-self: start;
+}
+
+body.home-lab .home-own-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.85rem;
+}
+
+body.home-lab .home-own-list li {
+    padding-top: 0.85rem;
+    border-top: 1px solid rgba(20, 18, 15, 0.18);
+    line-height: 1.45;
+}
+
+body.home-lab .home-close {
+    padding: clamp(3rem, 8vw, 6rem) 0 clamp(4rem, 9vw, 7rem);
+}
+
+body.home-lab .home-close h2 {
+    max-width: 14ch;
+    margin-bottom: 1.5rem;
+}
+
+body.home-lab .footer {
+    background: #14120f;
+    color: #f6f1e8;
+}
+
+body.home-lab .footer a {
+    color: #f6f1e8;
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+}
+
+@media (max-width: 900px) {
+    body.home-lab .home-hero,
+    body.home-lab .home-own,
+    body.home-lab .look-card.is-wide {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+
+    body.home-lab .home-steps {
+        grid-template-columns: 1fr;
+    }
+
+    body.home-lab .home-steps li,
+    body.home-lab .home-steps li:nth-child(4),
+    body.home-lab .home-steps li:nth-child(5) {
+        grid-column: auto;
+    }
+
+    body.home-lab .nav-menu .home-cta {
+        width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    body.home-lab .look-grid {
+        grid-template-columns: 1fr;
+    }
+
+    body.home-lab .home-stage-frame,
+    body.home-lab .home-poster,
+    body.home-lab .home-stage,
+    body.home-lab .home-stage a-scene {
+        min-height: 280px;
+        height: 280px;
+    }
+
+    body.home-lab h1 {
+        font-size: clamp(2.6rem, 14vw, 4rem);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    body.home-lab .home-cta,
+    body.home-lab .look-card,
+    body.home-lab .home-look-switch button {
+        transition: none;
+    }
+}

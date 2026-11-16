@@ -483,7 +483,7 @@
         try {
             sessionStorage.setItem(WAKE_KEY, JSON.stringify(host));
         } catch (err) {}
-        root.location.href = "index.html?edit=" + encodeURIComponent(host.share) + "#factory";
+        root.location.href = "host.html?edit=" + encodeURIComponent(host.share) + "#factory";
     }
 
     function enterDashboard() {
