@@ -37,7 +37,7 @@
         if (!config.clientId) {
             const hint = document.createElement("p");
             hint.className = "field-hint";
-            hint.textContent = "The Portal door is cut. Hang the Google lock, then this button appears.";
+            hint.textContent = "Google sign-in is not available yet.";
             el.appendChild(hint);
             return;
         }
@@ -194,6 +194,7 @@
             body: host.body || "square",
             specialty: host.specialty || "",
             inbox: host.inbox,
+            site: host.site || "",
             phone: host.phone || "",
             webhook: host.webhook || ""
         }).catch(function () {});
@@ -209,7 +210,7 @@
             }
             return waitFirebaseUser().then(function (user) {
                 if (!user) {
-                    return { ok: false, needLogin: true, message: "Sign in once more so Firebase Auth can keep your Host." };
+                    return { ok: false, needLogin: true, message: "Please sign in again to save changes to your Host." };
                 }
                 const incoming = Object.assign({}, host || {});
                 const drop = {};
@@ -286,8 +287,8 @@
                     hosts: [],
                     logs: [],
                     message: config.user
-                        ? "Sign in once more so Firebase Auth can open your Host."
-                        : "Enter the Portal first."
+                        ? "Please sign in again to open your Host."
+                        : "Sign in to manage your Hosts."
                 };
             }
             const ref = firebase.firestore().collection("lab").doc(user.uid);
@@ -319,7 +320,7 @@
     function patchHost(share, fields) {
         return waitFirebaseUser().then(function (user) {
             if (!user) {
-                return { ok: false, message: "Sign in once more so Firebase Auth can keep your Host." };
+                return { ok: false, message: "Please sign in again to save changes to your Host." };
             }
             const key = shareKey(share);
             const ref = firebase.firestore().collection("lab").doc(user.uid);
@@ -336,7 +337,7 @@
                     return found;
                 });
                 if (!found) {
-                    return { ok: false, message: "No Host on this shelf matches." };
+                    return { ok: false, message: "No saved Host matches this share code." };
                 }
                 return ref.set({ hosts: next, logs: logs }).then(function () {
                     return publishHost(found);
@@ -397,7 +398,7 @@
     function replyNote(note, text) {
         return waitFirebaseUser().then(function (user) {
             if (!user) {
-                return { ok: false, message: "Sign in once more so Firebase Auth can keep your Host." };
+                return { ok: false, message: "Please sign in again to save changes to your Host." };
             }
             const reply = String(text || "").trim();
             if (!note || !note.inbox || !note.id) {
@@ -460,7 +461,7 @@
     function forget(share) {
         return waitFirebaseUser().then(function (user) {
             if (!user) {
-                return { ok: false, message: "Sign in once more so Firebase Auth can open your Host." };
+                return { ok: false, message: "Please sign in again to open your Host." };
             }
             const key = String(share || "").toUpperCase();
             const ref = firebase.firestore().collection("lab").doc(user.uid);

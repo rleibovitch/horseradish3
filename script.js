@@ -84,6 +84,9 @@ document.addEventListener("DOMContentLoaded", function () {
     document.head.appendChild(style);
 
     function formatAgo(fromIso) {
+        if (!fromIso) {
+            return "";
+        }
         const then = new Date(fromIso);
         if (Number.isNaN(then.getTime())) {
             return "a while ago";
@@ -114,8 +117,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const ago = formatAgo(status && status.lastSeen);
         const full = online
             ? "Horseradish is online."
-            : "Horseradish was last online " + ago + ".";
-        const short = online ? "Online" : ago;
+            : (ago ? "Horseradish was last online " + ago + "." : "Horseradish is offline.");
+        const short = online ? "Online" : (ago || "Offline");
 
         document.querySelectorAll("[data-presence]").forEach(function (el) {
             el.classList.toggle("is-online", online);

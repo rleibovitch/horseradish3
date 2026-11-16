@@ -24,6 +24,8 @@
     let query = "";
     let pendingDelete = null;
     let pendingReply = null;
+    let pendingCrawl = null;
+    let crawlTick = null;
 
     function showNote(text) {
         note.textContent = text || "";
@@ -137,7 +139,7 @@
         if (host.trigger === "page" && host.page) {
             return host.name + " wakes on " + host.page + ".";
         }
-        return host.name + " is on your shelf.";
+        return host.name + " is saved to your account.";
     }
 
     function matches(host) {
@@ -207,6 +209,13 @@
         release.addEventListener("click", function () {
             askDelete(host);
         });
+        const crawl = document.createElement("button");
+        crawl.type = "button";
+        crawl.className = "os-mini";
+        crawl.textContent = "Crawl";
+        crawl.addEventListener("click", function () {
+            openCrawl(host);
+        });
         const connect = document.createElement("button");
         connect.type = "button";
         connect.className = "os-mini";
@@ -222,6 +231,7 @@
             box.appendChild(open);
         }
         box.appendChild(wake);
+        box.appendChild(crawl);
         box.appendChild(connect);
         box.appendChild(release);
         actions.appendChild(box);
@@ -303,7 +313,7 @@
         taskList.innerHTML = "";
         if (!notes.length) {
             const item = document.createElement("li");
-            item.textContent = "No notes from the outside yet. Open a Host outside, write a note, and it lands here.";
+            item.textContent = "No messages yet. Open a Host’s public page and send a message to see it here.";
             taskList.appendChild(item);
             return;
         }
@@ -375,7 +385,7 @@
             roleEl.textContent = "Log out";
         }
         if (perm) {
-            perm.textContent = (user.name || user.email) + " holds this door.";
+            perm.textContent = (user.name || user.email) + " is signed in.";
         }
     }
 
@@ -389,20 +399,21 @@
             }).length;
             document.getElementById("os-total").textContent = String(hosts.length);
             document.getElementById("os-active").textContent = String(active);
-            document.getElementById("os-total-meta").textContent = hosts.length === 1 ? "on this shelf" : "on this shelf";
-            document.getElementById("os-active-meta").textContent = active ? "Online currently running" : "none currently running";
+            document.getElementById("os-total-meta").textContent = hosts.length === 1 ? "saved to your account" : "saved to your account";
+            document.getElementById("os-active-meta").textContent = active ? "configured for always-on use" : "none configured for always-on use";
 
             if (!result.ok) {
                 current = null;
                 empty.hidden = false;
-                empty.textContent = result.message || "The shelf is not mounted yet.";
+                empty.textContent = result.message || "Your Hosts could not be loaded. Try signing in again.";
                 fillTable(fleetBody, []);
                 fillTable(hostsBody, []);
+                fillCrawlHosts([]);
                 fillActivity(activityList, []);
                 fillLogs(logsList, []);
                 fillTasks([]);
                 document.getElementById("os-tasks").textContent = "0";
-                document.getElementById("os-tasks-meta").textContent = "from the outside";
+                document.getElementById("os-tasks-meta").textContent = "sent through your Hosts";
                 if (buildBtn) {
                     buildBtn.textContent = "+ Create New Host";
                 }
@@ -416,7 +427,7 @@
             if (!hosts.length) {
                 current = null;
                 empty.hidden = false;
-                empty.textContent = "No Host here yet. Go build one.";
+                empty.textContent = "No Hosts yet. Create your first Host to get started.";
             } else {
                 empty.hidden = true;
                 current = shown[0] || hosts[0];
@@ -424,6 +435,7 @@
 
             fillTable(fleetBody, shown);
             fillTable(hostsBody, shown);
+            fillCrawlHosts(hosts);
             if (logs.length) {
                 fillLogs(activityList, logs.slice(0, 8));
             } else {
@@ -432,7 +444,7 @@
             fillLogs(logsList, logs);
             return Lab.listNotes(hosts).then(function (notes) {
                 document.getElementById("os-tasks").textContent = String(notes.length);
-                document.getElementById("os-tasks-meta").textContent = notes.length === 1 ? "from the outside" : "from the outside";
+                document.getElementById("os-tasks-meta").textContent = notes.length === 1 ? "sent through your Hosts" : "sent through your Hosts";
                 fillTasks(notes);
                 return true;
             });
@@ -462,7 +474,7 @@
         const dialog = document.getElementById("os-delete-ask");
         const copy = document.getElementById("os-delete-ask-copy");
         if (copy) {
-            copy.textContent = "This takes " + (host.name || "this Host") + " off your shelf.";
+            copy.textContent = "This removes " + (host.name || "this Host") + " from your saved Hosts.";
         }
         if (dialog && typeof dialog.showModal === "function") {
             if (!dialog.open) {
@@ -538,6 +550,117 @@
         }
     }
 
+    function fillCrawlHosts(list) {
+        const select = document.getElementById("os-crawl-host");
+        if (!select) {
+            return;
+        }
+        const kept = select.value;
+        select.innerHTML = "";
+        if (!list.length) {
+            const opt = document.createElement("option");
+            opt.value = "";
+            opt.textContent = "Create a Host first";
+            select.appendChild(opt);
+            return;
+        }
+        list.forEach(function (host) {
+            const opt = document.createElement("option");
+            opt.value = host.share || "";
+            opt.textContent = (host.name || "Host") + (host.site ? " · " + host.site : "");
+            select.appendChild(opt);
+        });
+        if (kept && list.some(function (host) { return host.share === kept; })) {
+            select.value = kept;
+        }
+    }
+
+    function jumpCrawl() {
+        showView("dashboard");
+        document.querySelectorAll("[data-os-jump]").forEach(function (btn) {
+            btn.classList.toggle("is-on", btn.getAttribute("data-os-jump") === "crawl");
+        });
+        const panel = document.getElementById("os-crawl");
+        if (panel && typeof panel.scrollIntoView === "function") {
+            panel.scrollIntoView({ block: "start" });
+        }
+        const url = document.getElementById("os-crawl-url");
+        if (url) {
+            url.focus();
+        }
+    }
+
+    function openCrawl(host) {
+        const url = document.getElementById("os-crawl-url");
+        const select = document.getElementById("os-crawl-host");
+        if (url) {
+            url.value = host.site || "";
+        }
+        if (select && host.share) {
+            select.value = host.share;
+        }
+        jumpCrawl();
+    }
+
+    function stopCrawlProgress(ok) {
+        if (crawlTick) {
+            clearInterval(crawlTick);
+            crawlTick = null;
+        }
+        const wrap = document.getElementById("os-crawl-progress");
+        const bar = document.getElementById("os-crawl-progress-bar");
+        if (!wrap || !bar) {
+            return;
+        }
+        if (ok) {
+            bar.style.width = "100%";
+            return;
+        }
+        wrap.hidden = true;
+        bar.style.width = "8%";
+    }
+
+    function startCrawlProgress() {
+        const wrap = document.getElementById("os-crawl-progress");
+        const bar = document.getElementById("os-crawl-progress-bar");
+        if (!wrap || !bar) {
+            return;
+        }
+        if (crawlTick) {
+            clearInterval(crawlTick);
+        }
+        wrap.hidden = false;
+        let pct = 10;
+        bar.style.width = pct + "%";
+        crawlTick = setInterval(function () {
+            pct = Math.min(92, pct + Math.max(0.6, (92 - pct) * 0.12));
+            bar.style.width = pct + "%";
+        }, 160);
+    }
+
+    function showCrawlPreview(page) {
+        const preview = document.getElementById("os-crawl-preview");
+        const title = document.getElementById("os-crawl-preview-title");
+        const copy = document.getElementById("os-crawl-preview-copy");
+        const hostEl = document.getElementById("os-crawl-preview-host");
+        if (!preview) {
+            return;
+        }
+        preview.hidden = !page;
+        if (!page) {
+            return;
+        }
+        if (hostEl) {
+            hostEl.textContent = page.host || page.url || "";
+        }
+        if (title) {
+            title.textContent = page.title || "Page";
+        }
+        if (copy) {
+            copy.textContent = (page.text || "").slice(0, 420);
+        }
+    }
+
     function openConnect(host) {
         const panel = document.getElementById("os-connect");
         const nameEl = document.getElementById("os-connect-name");
@@ -566,11 +689,15 @@
     }
 
     function showView(name) {
+        const section = name === "models" || name === "logs" ? "studio" : name;
         document.querySelectorAll(".os-view").forEach(function (view) {
-            view.hidden = view.getAttribute("data-view") !== name;
+            view.hidden = view.getAttribute("data-view") !== section;
         });
         document.querySelectorAll("[data-os-view]").forEach(function (btn) {
             btn.classList.toggle("is-on", btn.getAttribute("data-os-view") === name);
+        });
+        document.querySelectorAll("[data-os-jump]").forEach(function (btn) {
+            btn.classList.remove("is-on");
         });
         closeRail();
     }
@@ -597,36 +724,44 @@
         }
     }
 
-    function afterLogin() {
-        document.body.classList.add("lab-open");
-        const pending = Lab.takePending();
-        const go = pending
-            ? Lab.save(pending).then(function (result) {
-                if (!result.ok) {
-                    showNote(result.message);
-                }
-            })
-            : Promise.resolve();
-        return go.then(function () {
-            floor.hidden = false;
-            paintWho(Lab.config().user);
-            return paintFloor().then(function (opened) {
-                if (opened) {
-                    door.hidden = true;
+    function whenStudio(run) {
+        if (window.HorseradishAfterImage && window.HorseradishAfterImage.open) {
+            return Promise.resolve(run());
+        }
+        return new Promise(function (resolve) {
+            let done = false;
+            function finish() {
+                if (done) {
                     return;
                 }
-                door.hidden = false;
-                Lab.mountButton(googleSlot, function (result) {
-                    if (!result.ok) {
-                        showNote(result.message);
-                        return;
-                    }
-                    if (result.message) {
-                        showNote(result.message);
-                    }
-                    afterLogin();
-                });
-            });
+                done = true;
+                if (window.HorseradishAfterImage && window.HorseradishAfterImage.open) {
+                    resolve(run());
+                    return;
+                }
+                showNote("AfterImage could not open. Refresh the page.");
+                resolve();
+            }
+            document.addEventListener("afterimage-ready", finish, { once: true });
+            setTimeout(finish, 4000);
+        });
+    }
+
+    function afterLogin() {
+        document.body.classList.add("lab-open");
+        if (door) {
+            door.hidden = true;
+        }
+        if (floor) {
+            floor.hidden = false;
+        }
+        paintWho(Lab.config().user);
+        showNote("");
+        showView("models");
+        return whenStudio(function () {
+            return window.HorseradishAfterImage.open();
+        }).catch(function (err) {
+            showNote(err && err.message ? err.message : "AfterImage could not open.");
         });
     }
 
@@ -695,7 +830,7 @@
                     box.value = "";
                 }
                 if (status) {
-                    status.textContent = "It's in.";
+                    status.textContent = "Reply sent.";
                 }
                 paintFloor();
                 showView("tasks");
@@ -712,6 +847,111 @@
             }
         });
     }
+
+    const crawlForm = document.getElementById("os-crawl");
+    const crawlSave = document.getElementById("os-crawl-save");
+    if (crawlForm) {
+        crawlForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+            const url = ((document.getElementById("os-crawl-url") || {}).value || "").trim();
+            const noteEl = document.getElementById("os-crawl-note");
+            const go = document.getElementById("os-crawl-go");
+            if (!url) {
+                if (noteEl) {
+                    noteEl.textContent = "Enter a website address.";
+                }
+                return;
+            }
+            if (go) {
+                go.disabled = true;
+            }
+            if (noteEl) {
+                noteEl.textContent = "Crawling…";
+            }
+            showCrawlPreview(null);
+            startCrawlProgress();
+            fetch("/api/crawl", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url: url })
+            }).then(function (res) {
+                return res.json().then(function (body) {
+                    body.ok = res.ok && body.ok !== false && Boolean(body.text);
+                    body.status = res.status;
+                    return body;
+                });
+            }).then(function (page) {
+                if (go) {
+                    go.disabled = false;
+                }
+                if (!page.ok) {
+                    pendingCrawl = null;
+                    stopCrawlProgress(false);
+                    if (noteEl) {
+                        noteEl.textContent = page.message || "The site did not open.";
+                    }
+                    return;
+                }
+                pendingCrawl = page;
+                stopCrawlProgress(true);
+                showCrawlPreview(page);
+                if (noteEl) {
+                    noteEl.textContent = "Review the extracted text, then save it to a Host.";
+                }
+            }).catch(function () {
+                if (go) {
+                    go.disabled = false;
+                }
+                pendingCrawl = null;
+                stopCrawlProgress(false);
+                if (noteEl) {
+                    noteEl.textContent = "The site did not open.";
+                }
+            });
+        });
+    }
+    if (crawlSave) {
+        crawlSave.addEventListener("click", function () {
+            const noteEl = document.getElementById("os-crawl-note");
+            const share = ((document.getElementById("os-crawl-host") || {}).value || "").trim();
+            const page = pendingCrawl;
+            if (!page || !page.text) {
+                if (noteEl) {
+                    noteEl.textContent = "Crawl a site first.";
+                }
+                return;
+            }
+            if (!share) {
+                if (noteEl) {
+                    noteEl.textContent = "Create a Host first, then save this crawl to it.";
+                }
+                return;
+            }
+            crawlSave.disabled = true;
+            Lab.patchHost(share, {
+                site: page.url,
+                specialty: page.title || page.host || "",
+                fileName: page.host || "site",
+                fileText: String(page.text || "").slice(0, 8000),
+                crawledAt: page.at || new Date().toISOString()
+            }).then(function (result) {
+                crawlSave.disabled = false;
+                if (noteEl) {
+                    noteEl.textContent = result.ok ? "Page content saved to this Host." : (result.message || "Could not save.");
+                }
+                if (result.ok) {
+                    paintFloor();
+                }
+            });
+        });
+    }
+    document.querySelectorAll("[data-os-jump]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            if (btn.getAttribute("data-os-jump") === "crawl") {
+                jumpCrawl();
+            }
+        });
+    });
 
     const connectForm = document.getElementById("os-connect");
     if (connectForm) {
@@ -763,19 +1003,30 @@
 
     document.querySelectorAll("[data-os-view]").forEach(function (btn) {
         btn.addEventListener("click", function () {
-            showView(btn.getAttribute("data-os-view"));
+            const name = btn.getAttribute("data-os-view");
+            if (floor && floor.hidden) {
+                return;
+            }
+            showView(name);
+            if (!window.HorseradishAfterImage) {
+                return;
+            }
+            if (name === "models") {
+                window.HorseradishAfterImage.home();
+            }
+            if (name === "logs") {
+                window.HorseradishAfterImage.logs();
+            }
         });
     });
 
     if (search) {
         search.addEventListener("input", function () {
-            query = String(search.value || "").trim().toLowerCase();
-            const shown = hosts.filter(matches);
-            fillTable(fleetBody, shown);
-            fillTable(hostsBody, shown);
-            if (query) {
-                showView("hosts");
+            if (!window.HorseradishAfterImage || !floor || floor.hidden) {
+                return;
             }
+            window.HorseradishAfterImage.search(search.value);
+            showView("models");
         });
     }
 
