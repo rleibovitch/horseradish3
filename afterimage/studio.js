@@ -593,6 +593,11 @@ function editorPanel(target) {
 
 function renderEditor() {
   const set = state.draft;
+  if (!set) {
+    state.view = "library";
+    renderLibrary();
+    return;
+  }
   const current = selectedTarget();
   const signs = set.targets.map((target) => {
     const active = current && target.id === current.id;
@@ -615,6 +620,15 @@ function renderEditor() {
       <button type="button" class="os-ghost" data-action="back-library">Back</button>
     </div>
     ${state.error ? `<p class="ai-error" role="alert">${esc(state.error)}</p>` : ""}
+    ${state.copiedId === set.id ? `
+      <section class="os-panel ai-ready" role="status">
+        <p class="os-kicker">Ready</p>
+        <h2>Your experience is published.</h2>
+        <p>${state.copiedOk ? "It’s saved in this browser, and the embed code is copied." : "It’s saved in this browser."}</p>
+        <p>Open the camera and point it at your photo. The model shows up on the photo.</p>
+        <button type="button" class="os-create" data-action="open-draft">Open camera</button>
+        ${state.copiedOk ? "" : `<pre class="ai-code" id="ai-code">${esc(state.copiedCode || "")}</pre><p class="os-hint">The browser blocked automatic copy. The code above is selected.</p>`}
+      </section>` : ""}
     <section class="ai-editor">
       <aside class="os-panel ai-sign-column">
         <label class="ai-name">
@@ -634,9 +648,6 @@ function renderEditor() {
       </aside>
       <div class="ai-preview-column">
         <div class="ai-preview" id="ai-preview"></div>
-        ${state.copiedId === set.id ? (state.copiedOk
-          ? `<p class="os-hint">Saved in this browser. The embed code is copied.</p>`
-          : `<pre class="ai-code" id="ai-code">${esc(state.copiedCode || "")}</pre><p class="os-hint">Saved in this browser. The browser blocked automatic copy. The code above is selected.</p>`) : ""}
         ${current ? editorPanel(current) : `<div class="os-panel"><p class="os-field-label">Add content</p><p class="os-hint">Add a target image before choosing the content.</p></div>`}
       </div>
     </section>`;
@@ -692,31 +703,74 @@ function blobToDataUrl(blob) {
   });
 }
 
-async function ensureCompiler() {
-  if (window.MINDAR?.IMAGE?.Compiler) return window.MINDAR.IMAGE.Compiler;
-  if (window.__MindCompiler) return window.__MindCompiler;
-  await new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js";
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Could not load the MindAR compiler."));
-    document.head.appendChild(script);
+let compilerPromise = null;
+
+function ensureCompiler() {
+  if (window.MINDAR?.IMAGE?.Compiler) return Promise.resolve(window.MINDAR.IMAGE.Compiler);
+  if (window.__MindCompiler) return Promise.resolve(window.__MindCompiler);
+  if (compilerPromise) return compilerPromise;
+  const src = "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js";
+  compilerPromise = new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      const Compiler = window.MINDAR?.IMAGE?.Compiler;
+      if (!Compiler) return;
+      settled = true;
+      window.clearTimeout(timer);
+      window.__MindCompiler = Compiler;
+      resolve(Compiler);
+    };
+    const giveUp = (error) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      compilerPromise = null;
+      reject(error);
+    };
+    const timer = window.setTimeout(() => {
+      giveUp(new Error("This is taking too long. Check your connection and press Publish again."));
+    }, 20000);
+    const existing = document.querySelector(`script[src="${src}"]`);
+    if (existing?.dataset.ready === "yes") {
+      finish();
+      if (!settled) giveUp(new Error("The photo tools did not load. Press Publish again."));
+      return;
+    }
+    const script = existing || document.createElement("script");
+    script.addEventListener("load", () => {
+      script.dataset.ready = "yes";
+      finish();
+      if (!settled) giveUp(new Error("The photo tools did not load. Press Publish again."));
+    }, { once: true });
+    script.addEventListener("error", () => {
+      giveUp(new Error("The photo tools did not load. Check your connection and press Publish again."));
+    }, { once: true });
+    if (!existing) {
+      script.src = src;
+      script.async = true;
+      document.head.appendChild(script);
+    }
   });
-  const Compiler = window.MINDAR?.IMAGE?.Compiler;
-  if (!Compiler) throw new Error("MindAR loaded without the image compiler.");
-  window.__MindCompiler = Compiler;
-  return Compiler;
+  return compilerPromise;
+}
+
+function compileLine(progress) {
+  if (progress < 20) return "Taking a look at your photo.";
+  if (progress < 55) return "Finding the details a camera can hold onto.";
+  if (progress < 85) return "Still with you. The first photo takes a little while.";
+  return "Wrapping it up.";
 }
 
 async function compile(set) {
   if (!set.targets.length) throw new Error("Add a target image first.");
   const Compiler = await ensureCompiler();
-  showBusy("Reading the target image. The first one can take half a minute.", 0);
+  showBusy(compileLine(0), 0);
   const images = [];
   for (const target of set.targets) images.push(await blobToImage(target.imageBlob));
   const compiler = new Compiler();
   const data = await compiler.compileImageTargets(images, (progress) => {
-    showBusy("Reading the target image. The first one can take half a minute.", progress);
+    showBusy(compileLine(progress), progress);
   });
   data.forEach((entry, index) => {
     set.targets[index].featureCount = featureCount(entry);
@@ -1116,28 +1170,33 @@ async function onClick(event) {
   }
 
   if (action === "publish") {
-    if (!state.draft.targets.length) throw new Error("Add a target image first.");
+    if (!state.draft?.targets?.length) throw new Error("Add your photo first, then publish.");
+    showBusy("Taking a look at your photo.", 0);
     if (!(state.draft.mindBlob && !state.draft.mindDirty)) await compile(state.draft);
     const code = modelCode(state.draft);
     state.copiedId = state.draft.id;
     state.copiedCode = code;
+    state.copiedOk = false;
     state.error = "";
-    try {
-      await copyText(code);
-      state.copiedOk = true;
-    } catch (error) {
-      state.copiedOk = false;
-    }
     hideBusy();
     state.view = "editor";
     render();
-    const pre = document.getElementById("ai-code");
-    if (pre) {
-      const range = document.createRange();
-      range.selectNodeContents(pre);
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
+    document.querySelector(".ai-ready")?.scrollIntoView({ block: "start" });
+    try {
+      await copyText(code);
+      state.copiedOk = true;
+      render();
+    } catch (error) {
+      state.copiedOk = false;
+      render();
+      const pre = document.getElementById("ai-code");
+      if (pre) {
+        const range = document.createRange();
+        range.selectNodeContents(pre);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
     }
     return;
   }
