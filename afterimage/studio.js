@@ -1,3 +1,4 @@
+import { fetchAccountPhoto, forgetAccountSet, listAccountPhotos, saveAccountPhoto } from "./account.js";
 import { deleteSet, listSets, saveSet } from "./db.js";
 import { blobToImage, featureCount, fileToPicture, fileToSign, makeDemoSign, quality } from "./images.js";
 import { destroyScene, mountAR, mountPreview } from "./stage.js";
@@ -10,6 +11,13 @@ const SAMPLE = {
 };
 
 const DEMO_ID = "first-light";
+const MARVINS_ID = "marvins";
+const MARVINS = {
+  name: "Marvins",
+  signUrl: "/demos/marvins/target-day.jpg",
+  mindUrl: "/demos/marvins/target.mind",
+  modelUrl: "/demos/marvins/marvins-mechanical-museum-sign.glb",
+};
 const UNTITLED = "Untitled experience";
 
 const PRESETS = [
@@ -38,6 +46,7 @@ const state = {
   draft: null,
   selectedId: null,
   displaySample: false,
+  displayMarvins: false,
   displayReturn: "",
   error: "",
   found: new Set(),
@@ -170,7 +179,7 @@ function specFrom(target, link) {
       hideSign: replacement.hideSign !== false,
       scale: clampScale(replacement.scale),
       imageUrl: replacement.imageBlob ? link(replacement.imageBlob) : "",
-      modelUrl: replacement.modelBlob ? link(replacement.modelBlob) : "",
+      modelUrl: replacement.modelUrl || (replacement.modelBlob ? link(replacement.modelBlob) : ""),
     },
   };
 }
@@ -234,6 +243,93 @@ function hideBusy() {
   document.getElementById("ai-busy").hidden = true;
 }
 
+async function publishLocalPhotos() {
+  for (const set of state.sets) {
+    if (set.demo) continue;
+    let changed = false;
+    for (const target of set.targets || []) {
+      if (!target.imageBlob || target.accountPhoto) continue;
+      const kept = await saveAccountPhoto({
+        id: target.id,
+        name: target.name,
+        setId: set.id,
+        setName: set.name,
+        targetId: target.id,
+        width: target.width,
+        height: target.height,
+        blob: target.imageBlob,
+      });
+      if (kept) {
+        target.accountPhoto = true;
+        changed = true;
+      }
+    }
+    if (changed) await saveSet(set, owner);
+  }
+}
+
+async function absorbAccountPhotos() {
+  const photos = await listAccountPhotos();
+  if (!photos.length) return;
+  const grouped = new Map();
+  photos.forEach((photo) => {
+    if (!photo.setId || !photo.targetId) return;
+    if (!grouped.has(photo.setId)) grouped.set(photo.setId, []);
+    grouped.get(photo.setId).push(photo);
+  });
+  for (const [setId, items] of grouped) {
+    let set = state.sets.find((item) => item.id === setId);
+    if (!set) {
+      set = {
+        id: setId,
+        name: items[0].setName || UNTITLED,
+        updated: items[0].updated || Date.now(),
+        mindDirty: true,
+        mindBlob: null,
+        targets: [],
+        owner,
+      };
+      state.sets.push(set);
+    }
+    let changed = false;
+    for (const photo of items) {
+      let target = set.targets.find((item) => item.id === photo.targetId);
+      if (target?.imageBlob) {
+        if (!target.accountPhoto) {
+          target.accountPhoto = true;
+          changed = true;
+        }
+        continue;
+      }
+      const blob = await fetchAccountPhoto(photo.id);
+      if (!blob) continue;
+      if (!target) {
+        set.targets.push({
+          id: photo.targetId,
+          name: photo.name || "Photo",
+          width: photo.width,
+          height: photo.height,
+          featureCount: null,
+          imageBlob: blob,
+          accountPhoto: true,
+          replacement: defaultReplacement(),
+        });
+      } else {
+        target.imageBlob = blob;
+        target.accountPhoto = true;
+        target.width = target.width || photo.width;
+        target.height = target.height || photo.height;
+      }
+      changed = true;
+    }
+    if (changed) {
+      set.updated = Date.now();
+      await saveSet(set, owner);
+    }
+  }
+  state.sets.sort((a, b) => b.updated - a.updated);
+}
+
 function queueSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
@@ -258,11 +354,16 @@ function visibleSets() {
 }
 
 function isActive(set) {
-  return Boolean(set.mindBlob) && !set.mindDirty && set.targets.length > 0;
+  const tracked = Boolean(set.mindBlob || set.mindUrl);
+  return tracked && !set.mindDirty && set.targets.length > 0;
 }
 
 function demoSet() {
   return state.sets.find((set) => set.demo === DEMO_ID) || null;
+}
+
+function marvinsSet() {
+  return state.sets.find((set) => set.demo === MARVINS_ID) || null;
 }
 
 function statusOf(set) {
@@ -399,30 +500,35 @@ function render() {
 
 function wonderBanner() {
   const demo = demoSet();
-  if (demo) {
-    return `
-      <section class="os-wonder">
-        <div>
-          <p class="os-kicker">This week</p>
-          <h2>First Light is on the shelf.</h2>
-          <p>Show the card on one screen. Open the camera on another. A lantern appears where the card is.</p>
-        </div>
-        <div class="os-wonder-actions">
-          <button type="button" class="os-create is-wonder" data-action="open-demo">Open the demo</button>
-          <button type="button" class="os-ghost" data-action="show-demo-sign">Show the card</button>
-        </div>
-      </section>`;
-  }
+  const marvins = marvinsSet();
   return `
     <section class="os-wonder">
       <div>
-        <p class="os-kicker">This week</p>
-        <h2>First Light</h2>
-        <p>The demo to ship. A printed card, a camera, and a lantern that opens in the air.</p>
+        <p class="os-kicker">Marvins</p>
+        <h2>${marvins ? "Marvins is on the shelf." : "Marvins"}</h2>
+        <p>Show the sign, then open the camera. The museum model appears on that photo. The same files load on your phone and this computer.</p>
       </div>
       <div class="os-wonder-actions">
-        <button type="button" class="os-create is-wonder" data-action="place-demo">Place the demo</button>
-        <button type="button" class="os-ghost" data-action="show-sample">Show the card</button>
+        ${marvins
+          ? `<button type="button" class="os-create is-wonder" data-action="open-marvins">Open camera</button>`
+          : `<button type="button" class="os-create is-wonder" data-action="place-marvins">Place Marvins</button>`}
+        <button type="button" class="os-ghost" data-action="show-marvins">Show the sign</button>
+      </div>
+    </section>
+    <section class="os-wonder">
+      <div>
+        <p class="os-kicker">This week</p>
+        <h2>${demo ? "First Light is on the shelf." : "First Light"}</h2>
+        <p>${demo
+          ? "Show the card on one screen. Open the camera on another. A lantern appears where the card is."
+          : "The demo to ship. A printed card, a camera, and a lantern that opens in the air."}</p>
+      </div>
+      <div class="os-wonder-actions">
+        ${demo
+          ? `<button type="button" class="os-create is-wonder" data-action="open-demo">Open the demo</button>
+             <button type="button" class="os-ghost" data-action="show-demo-sign">Show the card</button>`
+          : `<button type="button" class="os-create is-wonder" data-action="place-demo">Place the demo</button>
+             <button type="button" class="os-ghost" data-action="show-sample">Show the card</button>`}
       </div>
     </section>`;
 }
@@ -666,6 +772,15 @@ function renderDisplay() {
       </section>`;
     return;
   }
+  if (state.displayMarvins) {
+    view.innerHTML = `
+      <section class="ai-display">
+        <img src="${MARVINS.signUrl}" alt="Marvins sign to show the camera">
+        <p>Leave this sign up on one screen. On the phone, open the lab, place Marvins, then press Open camera and aim it here.</p>
+        ${back}
+      </section>`;
+    return;
+  }
   const target = selectedTarget();
   if (!target) {
     state.view = "library";
@@ -855,10 +970,11 @@ async function openCameraFor(set, sample = false) {
   state.error = "";
   state.returnView = state.view === "stage" ? state.returnView : state.view;
   if (!sample && !set.targets.length) throw new Error("Add a target image first.");
-  await ensureAR();
-  if (!sample && (set.mindDirty || !set.mindBlob)) await compile(set);
   showBusy("Asking for the camera…", null);
   await primeCamera();
+  await ensureAR();
+  const readyMind = sample || set.mindUrl || (set.mindBlob && !set.mindDirty);
+  if (!readyMind) await compile(set);
   hideBusy();
   releaseStageUrls();
   if (sample) {
@@ -870,7 +986,8 @@ async function openCameraFor(set, sample = false) {
     }]);
     return;
   }
-  await launch(freshUrl(set.mindBlob), set.targets.map((target) => specFrom(target, freshUrl)));
+  const mindUrl = set.mindUrl || freshUrl(set.mindBlob);
+  await launch(mindUrl, set.targets.map((target) => specFrom(target, freshUrl)));
 }
 
 function isImageFile(file) {
@@ -901,6 +1018,57 @@ async function addFiles(fileList) {
   pushEvent(state.draft, state.draft.events?.length ? "saved" : "created");
   await saveSet(state.draft, owner);
   upsert(state.draft);
+  showBusy("Saving the photo to your account…", null);
+  try {
+    await publishLocalPhotos();
+  } catch (error) {
+    state.error = message(error);
+  }
+  hideBusy();
+  render();
+}
+
+async function placeMarvins() {
+  if (marvinsSet()) return;
+  showBusy("Bringing in Marvins…", null);
+  const picture = await fetch(MARVINS.signUrl);
+  if (!picture.ok) throw new Error("The Marvins sign could not load. Check your connection and try again.");
+  const imageBlob = await picture.blob();
+  const image = await blobToImage(imageBlob);
+  const target = {
+    id: crypto.randomUUID(),
+    name: "Marvins sign",
+    width: image.naturalWidth,
+    height: image.naturalHeight,
+    imageBlob,
+    signUrl: MARVINS.signUrl,
+    featureCount: null,
+    replacement: {
+      ...defaultReplacement(),
+      type: "model",
+      modelName: "Marvins",
+      modelUrl: MARVINS.modelUrl,
+      hideSign: true,
+    },
+  };
+  const set = {
+    id: crypto.randomUUID(),
+    name: "Marvins",
+    demo: MARVINS_ID,
+    updated: Date.now(),
+    mindDirty: false,
+    mindBlob: null,
+    mindUrl: MARVINS.mindUrl,
+    targets: [target],
+    impressions: 0,
+    owner,
+  };
+  pushEvent(set, "created");
+  await saveSet(set, owner);
+  upsert(set);
+  state.draft = set;
+  state.selectedId = target.id;
+  state.view = "library";
   hideBusy();
   render();
 }
@@ -972,6 +1140,7 @@ async function addDemo() {
 
 function leaveDisplay() {
   state.displaySample = false;
+  state.displayMarvins = false;
   state.error = "";
   state.view = state.displayReturn || (state.draft ? "editor" : "library");
   state.displayReturn = "";
@@ -1070,6 +1239,7 @@ async function onClick(event) {
     const set = state.sets.find((item) => item.id === id);
     if (!set || !confirm(`Delete “${set.name}”?`)) return;
     await deleteSet(id);
+    forgetAccountSet(id).catch(() => {});
     state.sets = state.sets.filter((item) => item.id !== id);
     render();
     return;
@@ -1086,6 +1256,30 @@ async function onClick(event) {
 
   if (action === "place-demo") {
     await placeDemo();
+    return;
+  }
+
+  if (action === "place-marvins") {
+    await placeMarvins();
+    return;
+  }
+
+  if (action === "open-marvins") {
+    const set = marvinsSet();
+    if (!set) return;
+    state.draft = set;
+    state.selectedId = set.targets[0]?.id || null;
+    await openCameraFor(set);
+    return;
+  }
+
+  if (action === "show-marvins") {
+    state.displaySample = false;
+    state.displayMarvins = true;
+    state.displayReturn = "library";
+    state.view = "display";
+    state.error = "";
+    render();
     return;
   }
 
@@ -1217,8 +1411,10 @@ async function onClick(event) {
 
   if (action === "delete-draft" && state.draft) {
     if (!confirm(`Delete “${state.draft.name}”?`)) return;
-    await deleteSet(state.draft.id);
-    state.sets = state.sets.filter((item) => item.id !== state.draft.id);
+    const gone = state.draft.id;
+    await deleteSet(gone);
+    forgetAccountSet(gone).catch(() => {});
+    state.sets = state.sets.filter((item) => item.id !== gone);
     state.draft = null;
     state.view = "library";
     render();
@@ -1419,6 +1615,14 @@ async function open() {
     state.sets = [];
     state.ready = false;
     state.error = message(error);
+  }
+  if (state.ready) {
+    try {
+      await publishLocalPhotos();
+      await absorbAccountPhotos();
+    } catch (error) {
+      state.error = message(error);
+    }
   }
   const entry = takeHomeEntry();
   if (entry) {

@@ -1952,39 +1952,6 @@ body.os-body {
     font-family: Inter, var(--font);
 }
 
-@media (prefers-color-scheme: dark) {
-    body.os-body {
-        color-scheme: dark;
-        --os-bg: #1b1f20;
-        --os-ink: #f3f4f6;
-        --os-muted: #9ca3af;
-        --os-faint: #6b7280;
-        --os-line: #2a2e32;
-        --os-panel: #191a1c;
-        --os-sunken: #121416;
-        --os-rail: #0c1222;
-        --os-nav: #94a3b8;
-        --os-nav-hover: #182033;
-        --os-hover: rgba(255, 255, 255, 0.06);
-        --os-info: #60a5fa;
-        --os-accent-soft: rgba(37, 99, 235, 0.18);
-        --os-live: #34d399;
-        --os-live-soft: rgba(16, 185, 129, 0.18);
-        --os-violet: #a78bfa;
-        --os-violet-soft: rgba(139, 92, 246, 0.2);
-        --os-warn: #fbbf24;
-        --os-warn-soft: rgba(245, 158, 11, 0.16);
-        --os-bad: #fca5a5;
-        --os-bad-soft: rgba(248, 113, 113, 0.16);
-        --os-good-text: #6ee7b7;
-        --os-ok-text: #fcd34d;
-        --os-wonder: #16130f;
-        --os-wonder-ink: #d6d3d1;
-        --os-ghost-line: #3a4046;
-    }
-}
-
-
 .os-app [hidden] {
     display: none !important;
 }
@@ -3059,7 +3026,8 @@ body.os-body {
     position: fixed;
     inset: 0;
     z-index: 70;
-    background: #0c0b09;
+    background: var(--os-bg);
+    color: var(--os-ink);
     display: grid;
     place-items: center;
     align-content: center;
