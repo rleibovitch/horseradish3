@@ -19,19 +19,48 @@ function motionOk() {
 }
 
 function addImage(assets, id, url) {
-  if (!url) return "";
+  if (!url) return null;
   const img = document.createElement("img");
   img.id = id;
   img.alt = "";
   img.src = url;
   if (/^https?:/i.test(url)) img.crossOrigin = "anonymous";
   assets.append(img);
-  return `#${id}`;
+  return { selector: `#${id}`, node: img };
 }
 
-function fitModel(model, userScale) {
+function addPhotoPlane(parent, image, width, height, position) {
+  const plane = el("a-plane", {
+    width: String(width),
+    height: String(height),
+    position,
+    material: "shader: flat; side: double; color: #f6f3ec",
+  });
+  parent.append(plane);
+  const paint = () => plane.setAttribute("material", "src", image.selector);
+  const ready = () => {
+    if (!plane.isConnected) return;
+    if (image.node.complete && image.node.naturalWidth) paint();
+    else image.node.addEventListener("load", paint, { once: true });
+  };
+  requestAnimationFrame(ready);
+  return plane;
+}
+
+function holdFrame(scene) {
+  const drop = () => {
+    if (scene.isConnected) document.documentElement.classList.remove("a-fullscreen");
+  };
+  drop();
+  scene.addEventListener("loaded", drop);
+  setTimeout(drop, 0);
+  setTimeout(drop, 400);
+}
+
+function fitModel(model, userScale, shiftX = 0, shiftY = 0) {
   const mesh = model.getObject3D("mesh");
   const THREE = window.AFRAME?.THREE || window.THREE;
+  model.object3D.position.set(shiftX, shiftY, 0);
   if (!mesh || !THREE) return;
 
   mesh.position.set(0, 0, 0);
@@ -61,8 +90,11 @@ function fitModel(model, userScale) {
   mesh.position.set(-center.x * scale, -center.y * scale, -box.min.z * scale + 0.02);
 }
 
-function addPreset(parent, preset, tint, scale) {
-  const group = el("a-entity", { scale: `${scale} ${scale} ${scale}` });
+function addPreset(parent, preset, tint, scale, shiftX = 0, shiftY = 0) {
+  const group = el("a-entity", {
+    position: `${shiftX} ${shiftY} 0`,
+    scale: `${scale} ${scale} ${scale}`,
+  });
   const move = motionOk();
   const material = lit(tint);
 
@@ -186,8 +218,12 @@ function addPreset(parent, preset, tint, scale) {
 function buildContent(parent, assets, spec, index) {
   const aspect = spec.aspect > 0 ? spec.aspect : 1;
   const replacement = spec.replacement;
-  const hide = replacement.type === "image" || replacement.hideSign;
-  const signSrc = addImage(assets, `sign-${index}`, hide ? "" : spec.signUrl);
+  const isModel = replacement.type === "model";
+  const hide = !isModel && (replacement.type === "image" || replacement.hideSign);
+  const showPhoto = Boolean(spec.preview || !hide);
+  const sign = addImage(assets, `sign-${index}`, spec.preview || (!isModel && showPhoto) ? spec.signUrl : "");
+  const shiftX = Number(replacement.shiftX) || 0;
+  const shiftY = (Number(replacement.shiftY) || 0) * aspect;
 
   if (spec.preview) {
     parent.append(
@@ -200,7 +236,9 @@ function buildContent(parent, assets, spec, index) {
     );
   }
 
-  if (hide) {
+  if (spec.preview && sign) {
+    addPhotoPlane(parent, sign, 1, aspect, "0 0 0.002");
+  } else if (!isModel && hide) {
     parent.append(
       el("a-plane", {
         width: "1",
@@ -209,29 +247,15 @@ function buildContent(parent, assets, spec, index) {
         material: `shader: flat; side: double; color: ${replacement.plinth}`,
       }),
     );
-  } else if (signSrc) {
-    parent.append(
-      el("a-plane", {
-        width: "1",
-        height: String(aspect),
-        position: "0 0 0.002",
-        material: `shader: flat; side: double; src: ${signSrc}`,
-      }),
-    );
+  } else if (!isModel && sign) {
+    addPhotoPlane(parent, sign, 1, aspect, "0 0 0.002");
   }
 
   if (replacement.type === "image") {
-    const src = addImage(assets, `picture-${index}`, replacement.imageUrl);
+    const picture = addImage(assets, `picture-${index}`, replacement.imageUrl);
     const scale = replacement.scale;
-    if (src) {
-      parent.append(
-        el("a-plane", {
-          width: String(scale),
-          height: String(aspect * scale),
-          position: "0 0 0.01",
-          material: `shader: flat; side: double; transparent: true; src: ${src}`,
-        }),
-      );
+    if (picture) {
+      addPhotoPlane(parent, picture, scale, aspect * scale, "0 0 0.01");
     } else {
       parent.append(
         el("a-text", {
@@ -259,22 +283,29 @@ function buildContent(parent, assets, spec, index) {
       );
       return;
     }
-    const model = el("a-gltf-model", {
-      src: replacement.modelUrl,
+    const model = el("a-gltf-model", { src: replacement.modelUrl });
+    model.addEventListener("model-error", () => {
+      const host = model.closest(".ai-preview");
+      if (!host || host.querySelector(".ai-model-error")) return;
+      const note = document.createElement("p");
+      note.className = "ai-model-error";
+      note.textContent = "That model did not open. Use a .glb with its textures packed inside.";
+      host.append(note);
     });
-    model.addEventListener("model-loaded", () => fitModel(model, replacement.scale));
+    model.addEventListener("model-loaded", () => fitModel(model, replacement.scale, shiftX, shiftY));
     parent.append(model);
     return;
   }
 
   const preset = PRESETS.has(replacement.preset) ? replacement.preset : "beacon";
-  addPreset(parent, preset, replacement.tint, replacement.scale);
+  addPreset(parent, preset, replacement.tint, replacement.scale, shiftX, shiftY);
 }
 
 function addLights(scene) {
   scene.append(
-    el("a-light", { type: "ambient", color: "#fff6ee", intensity: "1.7" }),
-    el("a-light", { type: "directional", color: "#ffffff", intensity: "2.6", position: "0.4 0.9 1.3" }),
+    el("a-light", { type: "ambient", color: "#fff8f2", intensity: "2.2" }),
+    el("a-light", { type: "directional", color: "#ffffff", intensity: "2.8", position: "0.4 0.9 1.3" }),
+    el("a-light", { type: "directional", color: "#e7eeff", intensity: "1.1", position: "-0.7 0.3 0.8" }),
   );
 }
 
@@ -300,7 +331,7 @@ function frameCamera(container, aspect) {
   const height = container.clientHeight || 360;
   const fov = 42;
   const tan = Math.tan((fov * Math.PI) / 360);
-  const margin = 1.7;
+  const margin = 1.2;
   const distanceForHeight = (aspect * margin) / (2 * tan);
   const distanceForWidth = margin / (2 * tan * (width / height));
   return { fov, distance: Math.max(distanceForHeight, distanceForWidth, 0.8) };
@@ -311,8 +342,8 @@ export function mountPreview(container, spec) {
   const scene = document.createElement("a-scene");
   const aspect = spec.aspect > 0 ? spec.aspect : 1;
   const frame = frameCamera(container, aspect);
-  scene.setAttribute("embedded", "");
-  scene.setAttribute("background", "color: #3a322b");
+  scene.setAttribute("embedded", "true");
+  scene.setAttribute("background", "color: #efeae2");
   scene.setAttribute("color-space", "sRGB");
   scene.setAttribute("renderer", "colorManagement: true; physicallyCorrectLights: true; antialias: true");
   scene.setAttribute("vr-mode-ui", "enabled: false");
@@ -320,8 +351,8 @@ export function mountPreview(container, spec) {
   scene.setAttribute("loading-screen", "enabled: false");
   addLights(scene);
 
-  const x = frame.distance * 0.42;
-  const y = frame.distance * 0.2;
+  const x = frame.distance * 0.16;
+  const y = frame.distance * 0.06;
   const z = frame.distance;
   const yaw = Math.atan2(x, z) * 180 / Math.PI;
   const pitch = -Math.atan2(y, Math.hypot(x, z)) * 180 / Math.PI;
@@ -337,6 +368,7 @@ export function mountPreview(container, spec) {
   scene.append(camera, assets, root);
   buildContent(root, assets, { ...spec, preview: true }, 0);
   container.append(scene);
+  holdFrame(scene);
 }
 
 export function mountAR(container, { mindUrl, specs, onFound, onLost, onReady, onError }) {
@@ -355,8 +387,10 @@ export function mountAR(container, { mindUrl, specs, onFound, onLost, onReady, o
       "autoStart: true",
     ].join("; "),
   );
+  scene.setAttribute("embedded", "true");
   scene.setAttribute("color-space", "sRGB");
   scene.setAttribute("renderer", "colorManagement: true; physicallyCorrectLights: true; alpha: true; antialias: true");
+  scene.setAttribute("background", "color: #000000; transparent: true");
   scene.setAttribute("vr-mode-ui", "enabled: false");
   scene.setAttribute("device-orientation-permission-ui", "enabled: false");
   addLights(scene);
@@ -381,5 +415,6 @@ export function mountAR(container, { mindUrl, specs, onFound, onLost, onReady, o
   scene.addEventListener("arReady", () => onReady());
   scene.addEventListener("arError", (event) => onError(event));
   container.append(scene);
+  holdFrame(scene);
   return scene;
 }

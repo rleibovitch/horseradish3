@@ -1,7 +1,8 @@
 import { fetchAccountPhoto, forgetAccountSet, listAccountPhotos, saveAccountPhoto } from "./account.js";
 import { deleteSet, listSets, saveSet } from "./db.js";
 import { blobToImage, featureCount, fileToPicture, fileToSign, makeDemoSign, quality } from "./images.js";
-import { destroyScene, mountAR, mountPreview } from "./stage.js";
+import { shapeGlb } from "./glb.js";
+import { destroyScene, mountAR, mountPreview } from "./stage.js?v=model-on-photo-20261117";
 
 const SAMPLE = {
   name: "Sample card",
@@ -86,6 +87,12 @@ function clampScale(value) {
   return Math.min(1.6, Math.max(0.35, number));
 }
 
+function clampShift(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 0;
+  return Math.min(0.4, Math.max(-0.4, Math.round(number * 100) / 100));
+}
+
 function message(error) {
   if (!error) return "Something went wrong.";
   if (error.name === "NotAllowedError") {
@@ -119,6 +126,8 @@ function defaultReplacement() {
     plinth: "#1a1612",
     hideSign: true,
     scale: 1,
+    shiftX: 0,
+    shiftY: 0,
     imageBlob: null,
     modelBlob: null,
     modelName: "",
@@ -178,6 +187,8 @@ function specFrom(target, link) {
       plinth: hex(replacement.plinth, "#1a1612"),
       hideSign: replacement.hideSign !== false,
       scale: clampScale(replacement.scale),
+      shiftX: clampShift(replacement.shiftX),
+      shiftY: clampShift(replacement.shiftY),
       imageUrl: replacement.imageBlob ? link(replacement.imageBlob) : "",
       modelUrl: replacement.modelUrl || (replacement.modelBlob ? link(replacement.modelBlob) : ""),
     },
@@ -376,6 +387,39 @@ function statusLabel(set) {
   if (status === "active") return "Active";
   if (status === "idle") return "Idle";
   return "Offline";
+}
+
+function hasGlb(set) {
+  if (set?.glb?.blob) return true;
+  return (set?.targets || []).some((target) => target.replacement?.type === "model" && target.replacement.modelBlob);
+}
+
+function hasTarget(set) {
+  return (set?.targets || []).some((target) => target.imageBlob);
+}
+
+function stationReached(set, id) {
+  if (id === "glb") return true;
+  if (id === "target") return hasGlb(set);
+  return hasGlb(set) && hasTarget(set);
+}
+
+function stationFor(set) {
+  if (!hasGlb(set)) return "glb";
+  if (!hasTarget(set)) return "target";
+  if (set.mindBlob && !set.mindDirty) return "publish";
+  return "place";
+}
+
+function rememberGlb(blob, name) {
+  if (!state.draft) return;
+  state.draft.glb = { blob, name };
+  state.draft.targets.forEach((target) => {
+    target.replacement.type = "model";
+    target.replacement.modelBlob = blob;
+    target.replacement.modelName = name;
+    target.replacement.hideSign = false;
+  });
 }
 
 function revealOf(set) {
@@ -697,6 +741,98 @@ function editorPanel(target) {
     </div>`;
 }
 
+function lineMarkup(set) {
+  const station = LINE.some((item) => item.id === state.station) ? state.station : "glb";
+  return `
+    <ol class="ai-line">
+      ${LINE.map((item, index) => {
+        const open = stationReached(set, item.id);
+        const current = item.id === station;
+        return `
+          <li>
+            <button type="button" data-action="station" data-station="${item.id}" aria-current="${current ? "step" : "false"}" ${open ? "" : "disabled"}>
+              ${index + 1} ${esc(item.label)}
+            </button>
+          </li>`;
+      }).join("")}
+    </ol>`;
+}
+
+function stationMarkup(set) {
+  const station = LINE.some((item) => item.id === state.station) ? state.station : "glb";
+  const current = selectedTarget();
+  const glbName = set.glb?.name || current?.replacement?.modelName || "";
+  if (station === "glb") {
+    const shapes = PRESETS.map((preset) => `
+      <button type="button" class="os-ghost" data-action="shape" data-preset="${preset.id}">${preset.name}</button>
+    `).join("");
+    return `
+      <section class="os-panel ai-station">
+        <p class="os-kicker">1 · GLB</p>
+        <h2>Start with the model.</h2>
+        <p>Upload a .glb, or pick a shape. This is what the camera puts on your photo.</p>
+        ${glbName ? `<p class="os-hint">Using ${esc(glbName)}.</p>` : ""}
+        <div class="ai-stack">
+          <button type="button" class="os-create" data-action="pick-model">Upload .glb</button>
+        </div>
+        <div class="ai-chips" role="group" aria-label="Shapes">${shapes}</div>
+        <button type="button" class="os-ghost" data-action="station" data-station="target" ${hasGlb(set) ? "" : "disabled"}>Next: target image</button>
+      </section>`;
+  }
+  if (station === "target") {
+    const signs = set.targets.map((target) => {
+      const active = current && target.id === current.id;
+      return `
+        <button type="button" class="ai-sign${active ? " is-on" : ""}" data-action="select" data-id="${esc(target.id)}">
+          <img src="${esc(urlFor(target.imageBlob))}" alt="">
+          <span>${esc(target.name)}</span>
+        </button>`;
+    }).join("");
+    return `
+      <section class="os-panel ai-station">
+        <p class="os-kicker">2 · Target image</p>
+        <h2>Add the photo the camera should recognize.</h2>
+        <p>Use a clear picture of the sign, card, or page. The same photo is saved to your account.</p>
+        <div class="ai-sign-list" id="ai-sign-list">${signs || `<p class="os-hint">No photo yet.</p>`}</div>
+        <div class="ai-stack">
+          <button type="button" class="os-create" data-action="add-signs">Add image</button>
+          <button type="button" class="os-ghost" data-action="use-demo">Use the test image</button>
+          <button type="button" class="os-ghost" data-action="station" data-station="place" ${hasTarget(set) ? "" : "disabled"}>Next: place</button>
+        </div>
+      </section>`;
+  }
+  if (station === "place") {
+    return `
+      <section class="ai-station">
+        <p class="os-kicker">3 · Place</p>
+        <h2>Sit the model on the photo.</h2>
+        <p>Slide it across the photo and set the size until it sits where you want it.</p>
+        <div class="ai-preview" id="ai-preview"></div>
+        ${current ? `
+          <div class="ai-controls">
+            <label>Across <input data-field="shift-x" type="range" min="-0.4" max="0.4" step="0.02" value="${clampShift(current.replacement.shiftX)}"></label>
+            <label>Up <input data-field="shift-y" type="range" min="-0.4" max="0.4" step="0.02" value="${clampShift(current.replacement.shiftY)}"></label>
+            <label>Size <input data-field="scale" type="range" min="0.35" max="1.6" step="0.05" value="${clampScale(current.replacement.scale)}"></label>
+          </div>` : `<p class="os-hint">Add a photo first.</p>`}
+        <button type="button" class="os-ghost" data-action="station" data-station="publish" ${hasTarget(set) ? "" : "disabled"}>Next: publish</button>
+      </section>`;
+  }
+  const trackingReady = Boolean(set.mindBlob);
+  return `
+    <section class="ai-station">
+      <p class="os-kicker">4 · Publish</p>
+      <h2>Send it to the camera.</h2>
+      <p>Publish reads the photo, then you can open the camera and point it at that picture.</p>
+      <div class="ai-preview" id="ai-preview"></div>
+      <div class="ai-stack">
+        <button type="button" class="os-create" data-action="publish">Publish experience</button>
+        <button type="button" class="os-ghost" data-action="open-draft">Open camera</button>
+        ${trackingReady ? `<button type="button" class="os-ghost" data-action="download-mind">Download tracking file</button>` : ""}
+        <button type="button" class="os-ghost os-delete" data-action="delete-draft">Delete experience</button>
+      </div>
+    </section>`;
+}
+
 function renderEditor() {
   const set = state.draft;
   if (!set) {
@@ -704,27 +840,23 @@ function renderEditor() {
     renderLibrary();
     return;
   }
+  if (!LINE.some((item) => item.id === state.station)) state.station = stationFor(set);
   const current = selectedTarget();
-  const signs = set.targets.map((target) => {
-    const active = current && target.id === current.id;
-    return `
-      <button type="button" class="ai-sign${active ? " is-on" : ""}" data-action="select" data-id="${esc(target.id)}">
-        <img src="${esc(urlFor(target.imageBlob))}" alt="">
-        <span>${esc(target.name)}</span>
-      </button>`;
-  }).join("");
-  const first = !set.targets.length && !state.sets.some((item) => item.targets.length);
-  const trackingReady = Boolean(set.mindBlob);
+  const showPreview = state.station === "place" || state.station === "publish";
 
   view.innerHTML = `
     <div class="os-head">
       <div>
         <p class="os-kicker">Experience</p>
-        <h1>${first ? "Create your first experience" : "Edit experience"}</h1>
-        <p>Add a target image, add the content, then publish.</p>
+        <h1>Create experience</h1>
       </div>
       <button type="button" class="os-ghost" data-action="back-library">Back</button>
     </div>
+    <label class="ai-name">
+      <span class="os-field-label">Name</span>
+      <input data-field="set-name" value="${esc(set.name)}" maxlength="60" autocomplete="off">
+    </label>
+    ${lineMarkup(set)}
     ${state.error ? `<p class="ai-error" role="alert">${esc(state.error)}</p>` : ""}
     ${state.copiedId === set.id ? `
       <section class="os-panel ai-ready" role="status">
@@ -735,30 +867,9 @@ function renderEditor() {
         <button type="button" class="os-create" data-action="open-draft">Open camera</button>
         ${state.copiedOk ? "" : `<pre class="ai-code" id="ai-code">${esc(state.copiedCode || "")}</pre><p class="os-hint">The browser blocked automatic copy. The code above is selected.</p>`}
       </section>` : ""}
-    <section class="ai-editor">
-      <aside class="os-panel ai-sign-column">
-        <label class="ai-name">
-          <span class="os-field-label">Name</span>
-          <input data-field="set-name" value="${esc(set.name)}" maxlength="60" autocomplete="off">
-        </label>
-        <p class="os-field-label">Target image</p>
-        <div class="ai-sign-list" id="ai-sign-list">${signs || `<p class="os-hint">Add a target image, or use the test image.</p>`}</div>
-        <div class="ai-stack">
-          <button type="button" class="os-ghost" data-action="add-signs">Add image</button>
-          <button type="button" class="os-ghost" data-action="use-demo">Use the test image</button>
-          <button type="button" class="os-create" data-action="publish">Publish experience</button>
-          <button type="button" class="os-ghost" data-action="open-draft">Open camera</button>
-          ${trackingReady ? `<button type="button" class="os-ghost" data-action="download-mind">Download tracking file</button>` : ""}
-          <button type="button" class="os-ghost os-delete" data-action="delete-draft">Delete experience</button>
-        </div>
-      </aside>
-      <div class="ai-preview-column">
-        <div class="ai-preview" id="ai-preview"></div>
-        ${current ? editorPanel(current) : `<div class="os-panel"><p class="os-field-label">Add content</p><p class="os-hint">Add a target image before choosing the content.</p></div>`}
-      </div>
-    </section>`;
+    ${stationMarkup(set)}`;
 
-  if (current) mountPreview(document.getElementById("ai-preview"), specFrom(current, urlFor));
+  if (showPreview && current) mountPreview(document.getElementById("ai-preview"), specFrom(current, urlFor));
 }
 
 function renderDisplay() {
@@ -1012,6 +1123,7 @@ async function addFiles(fileList) {
     };
     state.draft.targets.push(target);
     state.selectedId = target.id;
+    if (state.draft.glb?.blob) rememberGlb(state.draft.glb.blob, state.draft.glb.name);
   }
   state.draft.mindDirty = true;
   state.draft.mindBlob = null;
@@ -1207,7 +1319,6 @@ async function onClick(event) {
   }
 
   if (action === "new-set") {
-    await ensureAR();
     const set = {
       id: crypto.randomUUID(),
       name: UNTITLED,
@@ -1219,6 +1330,7 @@ async function onClick(event) {
     };
     state.draft = set;
     state.selectedId = null;
+    state.station = "glb";
     state.error = "";
     state.view = "editor";
     render();
@@ -1226,11 +1338,12 @@ async function onClick(event) {
   }
 
   if (action === "edit") {
-    await ensureAR();
     state.draft = state.sets.find((set) => set.id === id) || null;
     state.selectedId = state.draft?.targets[0]?.id || null;
+    state.station = state.draft ? stationFor(state.draft) : "glb";
     state.error = "";
     state.view = "editor";
+    if (state.station === "place" || state.station === "publish") await ensureAR();
     render();
     return;
   }
@@ -1459,12 +1572,24 @@ async function onClick(event) {
     return;
   }
 
-  if (action === "type" || action === "preset") {
-    const target = selectedTarget();
-    if (!target) return;
-    if (action === "type") target.replacement.type = button.dataset.type;
-    if (action === "preset") target.replacement.preset = button.dataset.preset;
-    queueSave();
+  if (action === "station") {
+    const next = button.dataset.station;
+    if (!state.draft || !stationReached(state.draft, next)) return;
+    state.station = next;
+    state.error = "";
+    if (next === "place" || next === "publish") await ensureAR();
+    render();
+    return;
+  }
+
+  if (action === "shape") {
+    const preset = PRESETS.find((item) => item.id === button.dataset.preset);
+    if (!preset || !state.draft) return;
+    rememberGlb(shapeGlb(preset.id, "#ff5a1f"), preset.name);
+    state.station = "target";
+    state.error = "";
+    await saveSet(state.draft, owner);
+    upsert(state.draft);
     render();
     return;
   }
@@ -1491,6 +1616,8 @@ function onInput(event) {
     return;
   }
   if (field === "scale") target.replacement.scale = clampScale(event.target.value);
+  if (field === "shift-x") target.replacement.shiftX = clampShift(event.target.value);
+  if (field === "shift-y") target.replacement.shiftY = clampShift(event.target.value);
   if (field === "tint") target.replacement.tint = hex(event.target.value, target.replacement.tint);
   if (field === "plinth") target.replacement.plinth = hex(event.target.value, target.replacement.plinth);
   if (field === "hide") target.replacement.hideSign = event.target.checked;
@@ -1540,7 +1667,6 @@ function takeHomeEntry() {
 }
 
 async function startBlank() {
-  await ensureAR();
   state.draft = {
     id: crypto.randomUUID(),
     name: UNTITLED,
@@ -1551,6 +1677,7 @@ async function startBlank() {
     owner,
   };
   state.selectedId = null;
+  state.station = "glb";
   state.error = "";
   state.view = "editor";
 }
@@ -1767,23 +1894,26 @@ document.getElementById("ai-rep-image")?.addEventListener("change", (event) => {
 
 document.getElementById("ai-rep-model")?.addEventListener("change", (event) => {
   const file = event.target.files?.[0];
+  const name = file?.name || "model.glb";
+  const reading = file ? file.arrayBuffer() : null;
   event.target.value = "";
-  const target = selectedTarget();
-  if (!file || !target) return;
-  if (!file.name.toLowerCase().endsWith(".glb")) {
-    fail(new Error("Use a .glb file so the textures travel with the model."));
-    return;
-  }
-  if (file.size > 40_000_000) {
-    fail(new Error("That model is over 40 MB. Export a smaller .glb."));
-    return;
-  }
-  target.replacement.modelBlob = file;
-  target.replacement.modelName = file.name;
-  target.replacement.type = "model";
-  state.error = "";
-  queueSave();
-  render();
+  if (!reading || !state.draft) return;
+  reading.then((bytes) => {
+    const head = new Uint8Array(bytes, 0, 4);
+    const magic = String.fromCharCode(head[0] || 0, head[1] || 0, head[2] || 0, head[3] || 0);
+    if (!name.toLowerCase().endsWith(".glb") || magic !== "glTF") {
+      fail(new Error("Use a .glb file so the textures travel with the model."));
+      return;
+    }
+    if (bytes.byteLength > 40_000_000) {
+      fail(new Error("That model is over 40 MB. Export a smaller .glb."));
+      return;
+    }
+    rememberGlb(new Blob([bytes], { type: "model/gltf-binary" }), name);
+    state.station = "target";
+    state.error = "";
+    return saveSet(state.draft, owner).then(upsert).then(() => render());
+  }).catch(fail);
 });
 
 window.HorseradishAfterImage = { open, home, logs, search };
