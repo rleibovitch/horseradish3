@@ -2946,6 +2946,17 @@ body.os-body {
     background: #121416;
     color: #f3f4f6;
 }
+.os-file {
+    position: fixed;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
 .ai-sign-list { display: grid; gap: 0.4rem; min-height: 4.5rem; }
 .ai-sign-list.is-dropping { outline: 2px dashed #2563eb; outline-offset: 4px; }
 .ai-sign {

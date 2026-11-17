@@ -819,9 +819,14 @@ async function openCameraFor(set, sample = false) {
   await launch(freshUrl(set.mindBlob), set.targets.map((target) => specFrom(target, freshUrl)));
 }
 
+function isImageFile(file) {
+  if (file.type.startsWith("image/")) return true;
+  return /\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name || "");
+}
+
 async function addFiles(fileList) {
-  const files = [...fileList].filter((file) => file.type.startsWith("image/"));
-  if (!files.length) throw new Error("Choose an image file.");
+  const files = [...fileList].filter(isImageFile);
+  if (!files.length) throw new Error("Choose a JPEG, PNG, or WebP.");
   showBusy("Preparing signs…", null);
   for (const file of files) {
     const image = await fileToSign(file);
@@ -1103,10 +1108,7 @@ async function onClick(event) {
     return;
   }
 
-  if (action === "add-signs") {
-    document.getElementById("ai-sign-files").click();
-    return;
-  }
+  if (action === "add-signs" || action === "pick-image" || action === "pick-model") return;
 
   if (action === "use-demo") {
     await addDemo();
@@ -1433,6 +1435,19 @@ if (view) {
   });
   view.addEventListener("click", (event) => {
     clearUntitled(nameField(event.target));
+    const action = event.target.closest("[data-action]")?.dataset.action;
+    if (action === "add-signs") {
+      document.getElementById("ai-sign-files")?.click();
+      return;
+    }
+    if (action === "pick-image") {
+      document.getElementById("ai-rep-image")?.click();
+      return;
+    }
+    if (action === "pick-model") {
+      document.getElementById("ai-rep-model")?.click();
+      return;
+    }
     onClick(event).catch(fail);
   });
   view.addEventListener("focusin", (event) => {
@@ -1468,9 +1483,9 @@ document.addEventListener("keydown", (event) => {
 });
 
 document.getElementById("ai-sign-files")?.addEventListener("change", (event) => {
-  const files = event.target.files;
+  const files = [...(event.target.files || [])];
   event.target.value = "";
-  if (files?.length) addFiles(files).catch(fail);
+  if (files.length) addFiles(files).catch(fail);
 });
 
 document.getElementById("ai-rep-image")?.addEventListener("change", (event) => {
