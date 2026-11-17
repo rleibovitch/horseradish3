@@ -10,6 +10,7 @@ const SAMPLE = {
 };
 
 const DEMO_ID = "first-light";
+const UNTITLED = "Untitled experience";
 
 const PRESETS = [
   { id: "beacon", name: "Beacon" },
@@ -618,7 +619,7 @@ function renderEditor() {
       <aside class="os-panel ai-sign-column">
         <label class="ai-name">
           <span class="os-field-label">Name</span>
-          <input data-field="set-name" value="${esc(set.name)}" maxlength="60">
+          <input data-field="set-name" value="${esc(set.name)}" maxlength="60" autocomplete="off">
         </label>
         <p class="os-field-label">Target image</p>
         <div class="ai-sign-list" id="ai-sign-list">${signs || `<p class="os-hint">Add a target image, or use the test image.</p>`}</div>
@@ -981,7 +982,7 @@ async function onClick(event) {
     await ensureAR();
     const set = {
       id: crypto.randomUUID(),
-      name: "Untitled experience",
+      name: UNTITLED,
       updated: Date.now(),
       mindDirty: true,
       mindBlob: null,
@@ -1285,7 +1286,7 @@ async function startBlank() {
   await ensureAR();
   state.draft = {
     id: crypto.randomUUID(),
-    name: "Untitled experience",
+    name: UNTITLED,
     updated: Date.now(),
     mindDirty: true,
     mindBlob: null,
@@ -1414,9 +1415,35 @@ function search(value) {
   render();
 }
 
+function nameField(target) {
+  if (target instanceof HTMLInputElement && target.dataset.field === "set-name") return target;
+  const label = target instanceof Element ? target.closest("label.ai-name") : null;
+  return label?.querySelector("[data-field='set-name']") || null;
+}
+
+function clearUntitled(input) {
+  if (!input || input.value.trim().toLowerCase() !== UNTITLED.toLowerCase()) return;
+  input.value = "";
+  if (state.draft) state.draft.name = "";
+}
+
 if (view) {
+  view.addEventListener("pointerdown", (event) => {
+    clearUntitled(nameField(event.target));
+  });
   view.addEventListener("click", (event) => {
+    clearUntitled(nameField(event.target));
     onClick(event).catch(fail);
+  });
+  view.addEventListener("focusin", (event) => {
+    clearUntitled(nameField(event.target));
+  });
+  view.addEventListener("focusout", (event) => {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement) || input.dataset.field !== "set-name") return;
+    if (input.value.trim() || !state.draft) return;
+    input.value = UNTITLED;
+    state.draft.name = UNTITLED;
   });
   view.addEventListener("input", onInput);
   view.addEventListener("dragover", (event) => {
