@@ -4,11 +4,15 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 import traceback
+from html import unescape
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.error import URLError
 from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parent
 OPERATOR = "Roni"
@@ -37,6 +41,79 @@ def read_presence() -> dict:
 
 def write_presence(data: dict) -> None:
     PRESENCE_PATH.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+
+def private_host(hostname: str) -> bool:
+    host = (hostname or "").strip().lower().strip("[]")
+    if not host or host in {"localhost", "0.0.0.0", "::1"}:
+        return True
+    if host.endswith(".local") or host.endswith(".internal") or host.endswith(".localhost"):
+        return True
+    parts = host.split(".")
+    if len(parts) == 4 and all(p.isdigit() for p in parts):
+        a, b = int(parts[0]), int(parts[1])
+        if a in {0, 10, 127}:
+            return True
+        if a == 169 and b == 254:
+            return True
+        if a == 172 and 16 <= b <= 31:
+            return True
+        if a == 192 and b == 168:
+            return True
+    return False
+
+
+def crawl_site(raw: str) -> tuple[int, dict]:
+    try:
+        parsed = urlparse((raw or "").strip())
+    except ValueError:
+        return 400, {"message": "Give it a public https website."}
+    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
+        return 400, {"message": "Give it a public https website."}
+    if private_host(parsed.hostname):
+        return 400, {"message": "Give it a public https website."}
+    href = parsed.geturl()
+    try:
+        req = Request(
+            href,
+            headers={
+                "User-Agent": "HorseradishHost/1.0 (+https://horseradish.ai)",
+                "Accept": "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1",
+            },
+            method="GET",
+        )
+        with urlopen(req, timeout=8) as res:
+            final = res.geturl()
+            check = urlparse(final)
+            if check.scheme != "https" or private_host(check.hostname or ""):
+                return 400, {"message": "Give it a public https website."}
+            raw_html = res.read(400001)
+            if len(raw_html) > 400000:
+                return 413, {"message": "That page is too large to chew."}
+            html = raw_html.decode("utf-8", "ignore")
+            href = final
+    except URLError:
+        return 502, {"message": "The site did not open."}
+    title_m = re.search(r"<title[^>]*>([\s\S]*?)</title>", html, re.I)
+    title = unescape(re.sub(r"\s+", " ", title_m.group(1) if title_m else "")).strip()
+    body = re.sub(r"<script[\s\S]*?</script>", " ", html, flags=re.I)
+    body = re.sub(r"<style[\s\S]*?</style>", " ", body, flags=re.I)
+    body = re.sub(r"<[^>]+>", " ", body)
+    body = unescape(re.sub(r"\s+", " ", body)).strip()
+    text = "\n\n".join(part for part in (title, body) if part)[:8000]
+    if not text:
+        return 422, {"message": "No knowledge came off that page."}
+    host = urlparse(href).hostname or ""
+    return 200, {
+        "ok": True,
+        "url": href,
+        "host": host,
+        "title": (title or host or "Site")[:120],
+        "description": "",
+        "text": text,
+        "chars": len(text),
+        "at": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+    }
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -82,6 +159,11 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path
+        if path == "/api/crawl":
+            body = self.read_json()
+            status, payload = crawl_site(str(body.get("url") or ""))
+            self.send_json(status, payload)
+            return
         if path != "/api/presence":
             self.send_error(404)
             return

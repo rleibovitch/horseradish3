@@ -104,7 +104,8 @@
         editShare: "",
         inbox: "",
         phone: "",
-        webhook: ""
+        webhook: "",
+        crawledAt: ""
     };
 
     function makeInbox() {
@@ -246,6 +247,7 @@
         state.inbox = preset.inbox || state.inbox || "";
         state.phone = preset.phone || "";
         state.webhook = preset.webhook || "";
+        state.crawledAt = preset.crawledAt || "";
         if (state.portrait) {
             portraitImg.src = state.portrait;
             portraitImg.hidden = false;
@@ -510,7 +512,8 @@
             specialty: state.specialty || "A specialty still arriving",
             site: state.site,
             fileName: state.fileName,
-            fileText: state.fileText.slice(0, 4000),
+            fileText: state.fileText.slice(0, 8000),
+            crawledAt: state.crawledAt || "",
             trigger: state.trigger,
             phrase: state.phrase,
             page: state.page,
@@ -829,9 +832,82 @@
             setMsg("Give it a specialty, a file, or a site first.");
             return;
         }
-        state.brained = true;
-        setMsg("Knowledge is in. Place it on your asset.");
-        showCard("deploy");
+        function finishBrain(msg) {
+            state.brained = true;
+            setMsg(msg);
+            showCard("deploy");
+            render();
+        }
+        if (!state.site) {
+            finishBrain("Knowledge is in. Place it on your asset.");
+            return;
+        }
+        const btn = document.getElementById("brain-btn");
+        const progress = document.getElementById("brain-progress");
+        const bar = document.getElementById("brain-progress-bar");
+        let tick = null;
+        function stopProgress(ok) {
+            if (tick) {
+                clearInterval(tick);
+                tick = null;
+            }
+            if (!progress || !bar) {
+                return;
+            }
+            if (ok) {
+                bar.style.width = "100%";
+                return;
+            }
+            progress.hidden = true;
+            bar.style.width = "8%";
+        }
+        if (btn) {
+            btn.disabled = true;
+        }
+        if (progress && bar) {
+            progress.hidden = false;
+            let pct = 10;
+            bar.style.width = pct + "%";
+            tick = setInterval(function () {
+                pct = Math.min(92, pct + Math.max(0.6, (92 - pct) * 0.12));
+                bar.style.width = pct + "%";
+            }, 160);
+        }
+        setMsg("Crawling the website…");
+        fetch("/api/crawl", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: state.site })
+        }).then(function (res) {
+            return res.json().then(function (body) {
+                body.ok = res.ok && Boolean(body.text);
+                return body;
+            });
+        }).then(function (page) {
+            if (btn) {
+                btn.disabled = false;
+            }
+            if (!page.ok) {
+                stopProgress(false);
+                setMsg(page.message || "The site did not open.");
+                return;
+            }
+            stopProgress(true);
+            state.fileText = String(page.text || "").slice(0, 8000);
+            state.fileName = state.fileName || page.host || "site";
+            state.crawledAt = page.at || "";
+            if (!state.specialty && page.title) {
+                specialtyInput.value = String(page.title).slice(0, 80);
+                state.specialty = specialtyInput.value;
+            }
+            finishBrain("The website is the knowledge. Place it on your asset.");
+        }).catch(function () {
+            if (btn) {
+                btn.disabled = false;
+            }
+            stopProgress(false);
+            setMsg("The site did not open.");
+        });
     });
 
     portraitInput.addEventListener("change", function () {

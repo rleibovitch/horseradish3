@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<p id="status">starting</p>
+<script>
+  window.requestAnimationFrame = (callback) => setTimeout(() => callback(performance.now()), 0);
+  window.cancelAnimationFrame = (id) => clearTimeout(id);
+</script>
+<script type="module">
+import "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js";
+
+function report(text) {
+  document.getElementById("status").textContent = text;
+  return fetch("/progress", { method: "POST", body: text }).catch(() => {});
+}
+
+async function run() {
+  await report("loading image");
+  const img = new Image();
+  img.src = "target-day.jpg";
+  await img.decode();
+  await report("image " + img.naturalWidth + "x" + img.naturalHeight);
+  const Compiler = window.MINDAR && window.MINDAR.IMAGE && window.MINDAR.IMAGE.Compiler;
+  if (!Compiler) throw new Error("MindAR compiler did not load.");
+  const compiler = new Compiler();
+  const compiled = await compiler.compileImageTargets([img], (progress) => {
+    report("compiling " + Math.round(progress));
+  });
+  const features = compiled.map((entry) => {
+    const frame = entry.matchingData && entry.matchingData[0];
+    const maxima = frame && frame.maximaPoints ? frame.maximaPoints.length : 0;
+    const minima = frame && frame.minimaPoints ? frame.minimaPoints.length : 0;
+    return maxima + minima;
+  });
+  const exported = await compiler.exportData();
+  const bytes = exported instanceof ArrayBuffer ? new Uint8Array(exported) : new Uint8Array(exported.buffer || exported);
+  await report("export " + bytes.byteLength + " features " + features.join(","));
+  const saved = await fetch("/save", {
+    method: "POST",
+    headers: { "Content-Type": "application/octet-stream", "X-Features": features.join(",") },
+    body: bytes,
+  });
+  if (!saved.ok) throw new Error("Could not save the tracking file.");
+  document.body.dataset.ready = "yes";
+  await report("ready " + features.join(",") + " " + bytes.byteLength);
+}
+
+run().catch(async (error) => {
+  const message = error && error.message ? error.message : String(error);
+  document.body.dataset.ready = "error";
+  await report("error " + message);
+});
+</script>

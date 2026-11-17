@@ -22,9 +22,17 @@ const PRESETS = [
 const AFRAME_SRC = "https://aframe.io/releases/1.6.0/aframe.min.js";
 const MINDAR_SRC = "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js";
 
+const LINE = [
+  { id: "glb", label: "GLB" },
+  { id: "target", label: "Target image" },
+  { id: "place", label: "Place" },
+  { id: "publish", label: "Publish" },
+];
+
 const state = {
   view: "library",
   returnView: "library",
+  station: "glb",
   sets: [],
   draft: null,
   selectedId: null,
@@ -228,7 +236,7 @@ function hideBusy() {
 function queueSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    if (!state.draft || !state.draft.targets.length) return;
+    if (!state.draft || (!state.draft.targets.length && !state.draft.glb?.blob)) return;
     saveSet(state.draft, owner).then(upsert).catch((error) => {
       state.error = message(error);
       render();
@@ -269,12 +277,13 @@ function statusLabel(set) {
 }
 
 function revealOf(set) {
+  if (set.glb?.name) return set.glb.name;
   const target = set.targets[0];
-  if (!target || !target.replacement) return "No reveal yet";
+  if (!target || !target.replacement) return "No GLB yet";
+  if (target.replacement.type === "model") return target.replacement.modelName || "GLB";
   if (target.replacement.type === "image") return "Picture";
-  if (target.replacement.type === "model") return target.replacement.modelName || "3D file";
   const preset = PRESETS.find((item) => item.id === target.replacement.preset);
-  return preset ? preset.name : "3D object";
+  return preset ? preset.name : "No GLB yet";
 }
 
 function shortId(id) {
@@ -455,8 +464,8 @@ function renderLibrary() {
       <div>
         <h1>${fresh ? "Create your first experience" : "Experiences"}</h1>
         <p>${fresh
-          ? "Add a target image, add the content a camera reveals, then publish."
-          : "A target image gets someone in the door. The camera reveals the content."}</p>
+          ? "Create or upload a GLB, then move it down the line."
+          : "Each experience starts with a GLB. The line carries it to a target image and publish."}</p>
       </div>
       <button type="button" class="os-create" data-action="new-set">${fresh ? "Create your first experience" : "+ Create experience"}</button>
     </div>
@@ -593,6 +602,7 @@ function renderEditor() {
       </button>`;
   }).join("");
   const first = !set.targets.length && !state.sets.some((item) => item.targets.length);
+  const trackingReady = Boolean(set.mindBlob);
 
   view.innerHTML = `
     <div class="os-head">
@@ -617,7 +627,7 @@ function renderEditor() {
           <button type="button" class="os-ghost" data-action="use-demo">Use the test image</button>
           <button type="button" class="os-create" data-action="publish">Publish experience</button>
           <button type="button" class="os-ghost" data-action="open-draft">Open camera</button>
-          ${ready ? `<button type="button" class="os-ghost" data-action="download-mind">Download tracking file</button>` : ""}
+          ${trackingReady ? `<button type="button" class="os-ghost" data-action="download-mind">Download tracking file</button>` : ""}
           <button type="button" class="os-ghost os-delete" data-action="delete-draft">Delete experience</button>
         </div>
       </aside>
@@ -1233,8 +1243,15 @@ function onInput(event) {
 function fail(error) {
   hideBusy();
   state.error = message(error);
-  if (state.view === "stage") exitStage();
-  else render();
+  if (state.view === "stage") {
+    exitStage();
+    return;
+  }
+  try {
+    render();
+  } catch (renderError) {
+    console.error(renderError);
+  }
 }
 
 function accountOwner() {
