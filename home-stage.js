@@ -135,9 +135,37 @@ function sessionLabel() {
     .catch(() => {});
 }
 
+function createHover() {
+  const word = document.querySelector(".home-create");
+  const video = document.getElementById("home-create-video");
+  const hero = document.querySelector(".home-hero");
+  if (!word || !video || !hero) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const play = () => {
+    hero.classList.add("is-playing");
+    video.currentTime = 0;
+    const attempt = video.play();
+    if (attempt && attempt.catch) {
+      attempt.catch(() => {
+        video.muted = true;
+        video.play().catch(() => {});
+      });
+    }
+  };
+  const stop = () => {
+    hero.classList.remove("is-playing");
+    video.pause();
+  };
+
+  word.addEventListener("pointerenter", play);
+  word.addEventListener("pointerleave", stop);
+}
+
 menu();
 paintChoice();
 sessionLabel();
+createHover();
 
 document.getElementById("home-preview")?.addEventListener("click", () => {
   showPreview();
