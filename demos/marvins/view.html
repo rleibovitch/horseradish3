@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <script src="../../analytics.js"></script>
+  <title>Marvins clock</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #efeae2; }
+    canvas { display: block; width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color("#efeae2");
+const camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.01, 100);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+renderer.setPixelRatio(devicePixelRatio);
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.append(renderer.domElement);
+
+scene.add(new THREE.AmbientLight("#fff8f2", 1.4));
+const key = new THREE.DirectionalLight("#ffffff", 2.4);
+key.position.set(2, 3, 4);
+scene.add(key);
+const fill = new THREE.DirectionalLight("#d9e4ff", 0.9);
+fill.position.set(-3, 1, 2);
+scene.add(fill);
+
+const params = new URLSearchParams(location.search);
+const focus = params.get("focus") || "clock";
+
+function named(root, pattern) {
+  const hits = [];
+  root.traverse((child) => {
+    if (child.name && pattern.test(child.name)) hits.push(child);
+  });
+  return hits;
+}
+
+function frame(object) {
+  object.updateWorldMatrix(true, true);
+  const box = new THREE.Box3().setFromObject(object);
+  const size = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  box.getSize(size);
+  box.getCenter(center);
+  const span = Math.max(size.x, size.y, size.z) || 1;
+  const distance = (span * 0.65) / Math.tan((camera.fov * Math.PI) / 360);
+  const thin = [
+    ["x", size.x],
+    ["y", size.y],
+    ["z", size.z],
+  ].sort((a, b) => a[1] - b[1])[0][0];
+  if (thin === "x") camera.position.set(center.x + distance, center.y + distance * 0.08, center.z + distance * 0.35);
+  else if (thin === "y") camera.position.set(center.x + distance * 0.35, center.y + distance, center.z);
+  else camera.position.set(center.x + distance * 0.42, center.y + distance * 0.08, center.z + distance);
+  camera.near = Math.max(distance / 200, 0.001);
+  camera.far = distance * 40;
+  camera.lookAt(center);
+  controls.target.copy(center);
+  controls.update();
+  camera.updateProjectionMatrix();
+}
+
+function tick() {
+  requestAnimationFrame(tick);
+  controls.update();
+  renderer.render(scene, camera);
+}
+tick();
+
+new GLTFLoader().load("/demos/marvins/marvins-mechanical-museum-sign.glb", (gltf) => {
+  const root = gltf.scene;
+  scene.add(root);
+  if (focus === "sign") {
+    frame(root);
+  } else {
+    const pattern = /clock|hour hand|minute hand|reverse-time/i;
+    root.traverse((child) => {
+      if (!child.isMesh) return;
+      let node = child;
+      let keep = false;
+      while (node) {
+        if (node.name && pattern.test(node.name)) keep = true;
+        node = node.parent;
+      }
+      child.visible = keep;
+    });
+    const parts = named(root, pattern);
+    const group = new THREE.Group();
+    scene.add(group);
+    for (const part of parts) group.attach(part);
+    frame(group);
+  }
+  window.__ready = true;
+}, undefined, (error) => {
+  document.body.textContent = String(error);
+});
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>

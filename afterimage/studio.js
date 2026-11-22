@@ -50,6 +50,8 @@ const state = {
   displayMarvins: false,
   displayReturn: "",
   error: "",
+  scene: null,
+  sceneReturn: "",
   found: new Set(),
   ready: false,
 };
@@ -536,155 +538,295 @@ function render() {
     if (preview) destroyScene(preview);
   }
   if (state.view === "library" || state.view === "logs") releaseUrls();
+  document.body.classList.toggle("is-explore", state.view === "library" || state.view === "scene" || state.view === "projects");
   if (state.view === "editor") renderEditor();
   else if (state.view === "display") renderDisplay();
   else if (state.view === "logs") renderLogs();
+  else if (state.view === "scene") renderScene();
+  else if (state.view === "projects") renderProjects();
   else renderLibrary();
 }
 
-function wonderBanner() {
-  const demo = demoSet();
-  const marvins = marvinsSet();
+function renderProjects() {
+  view.innerHTML = `
+    <div class="ox-projects">
+      <article class="ox-project-card">
+        <div class="ox-tree" aria-hidden="true">
+          <div class="ox-tree-board">
+            <p class="ox-tree-project"><span class="ox-folder"></span> Project</p>
+            <p class="ox-tree-label">AR Scenes</p>
+            <div class="ox-tree-scenes">
+              <div class="ox-tree-scene is-on">
+                <img src="${esc(MARVINS.signUrl)}" alt="">
+                <span class="ox-gem"></span>
+                Scene 1
+              </div>
+              <div class="ox-tree-scene">
+                <img src="${esc(SAMPLE.signUrl)}" alt="">
+                <span class="ox-gem"></span>
+                Scene 6
+              </div>
+            </div>
+          </div>
+        </div>
+        <h2>Create your own AR experiences</h2>
+        <p>Build and organize augmented reality projects and scenes step by step from scratch</p>
+        <button type="button" class="ox-go ox-go-pill" data-action="new-set">+ Create</button>
+      </article>
+      <article class="ox-project-card ox-project-library">
+        <h2>Start from a ready-made experience</h2>
+        <p>Take a look at the library and start from a ready-made experience</p>
+        <button type="button" class="ox-outline ox-outline-lg" data-action="show-library">View experience library</button>
+        <div class="ox-browsers" aria-hidden="true">
+          <div class="ox-browser">
+            <div class="ox-browser-bar"><i></i><i></i><i></i><span>horseradish</span></div>
+            <img src="${esc(MARVINS.signUrl)}" alt="">
+          </div>
+          <div class="ox-browser ox-browser-sample">
+            <div class="ox-browser-bar"><i></i><i></i><i></i><span>studio</span></div>
+            <img src="${esc(SAMPLE.signUrl)}" alt="">
+          </div>
+        </div>
+      </article>
+    </div>`;
+}
+
+function sampleProjects() {
+  const samples = [
+    {
+      title: "Marvins",
+      image: MARVINS.signUrl,
+      alt: "Marvin's sign",
+      placed: Boolean(marvinsSet()),
+      place: "place-marvins",
+      open: "open-marvins",
+      show: "show-marvins",
+      showLabel: "Show the sign",
+      href: "demos/marvins/view.html",
+    },
+    {
+      title: "First Light",
+      image: SAMPLE.signUrl,
+      alt: "Sample card",
+      placed: Boolean(demoSet()),
+      place: "place-demo",
+      open: "open-demo",
+      show: "show-demo-sign",
+      showLabel: "Show the card",
+      href: "",
+    },
+  ];
+  if (!query) return samples;
+  return samples.filter((sample) => sample.title.toLowerCase().includes(query));
+}
+
+function sampleCard(sample) {
+  const action = sample.placed ? sample.open : sample.place;
+  const label = sample.placed ? "Open camera" : "Try this sample";
   return `
-    <section class="os-wonder">
-      <div>
-        <p class="os-kicker">Marvins</p>
-        <h2>${marvins ? "Marvins is on the shelf." : "Marvins"}</h2>
-        <p>Show the sign, then open the camera. The museum model appears on that photo. The same files load on your phone and this computer.</p>
+    <article class="ox-sample">
+      <img src="${esc(sample.image)}" alt="${esc(sample.alt)}">
+      <div class="ox-sample-body">
+        <p>Image tracking sample</p>
+        <h3>${esc(sample.title)}</h3>
+        <div class="ox-sample-actions">
+          <button type="button" data-action="${action}">${label}</button>
+          <button type="button" data-action="${sample.show}">${esc(sample.showLabel)}</button>
+          ${sample.href ? `<a href="${esc(sample.href)}">View experience</a>` : ""}
+        </div>
       </div>
-      <div class="os-wonder-actions">
-        ${marvins
-          ? `<button type="button" class="os-create is-wonder" data-action="open-marvins">Open camera</button>`
-          : `<button type="button" class="os-create is-wonder" data-action="place-marvins">Place Marvins</button>`}
-        <button type="button" class="os-ghost" data-action="show-marvins">Show the sign</button>
+    </article>`;
+}
+
+function experienceCard(set) {
+  const target = (set.targets || []).find((item) => item.imageBlob);
+  const thumb = target ? urlFor(target.imageBlob) : "";
+  return `
+    <article class="ox-sample">
+      ${thumb
+        ? `<img src="${esc(thumb)}" alt="">`
+        : `<div class="ox-sample-empty" aria-hidden="true">${esc(String(set.name || "E").charAt(0).toUpperCase())}</div>`}
+      <div class="ox-sample-body">
+        <p>Your experience · ${esc(statusLabel(set))}</p>
+        <h3>${esc(set.name || "Untitled experience")}</h3>
+        <div class="ox-sample-actions">
+          ${isActive(set) ? `<button type="button" data-action="camera" data-id="${esc(set.id)}">Open camera</button>` : ""}
+          <button type="button" data-action="edit" data-id="${esc(set.id)}">Edit</button>
+          <button type="button" data-action="copy-code" data-id="${esc(set.id)}">${state.copiedId === set.id && state.copiedOk ? "Copied" : "Copy code"}</button>
+        </div>
       </div>
-    </section>
-    <section class="os-wonder">
-      <div>
-        <p class="os-kicker">This week</p>
-        <h2>${demo ? "First Light is on the shelf." : "First Light"}</h2>
-        <p>${demo
-          ? "Show the card on one screen. Open the camera on another. A lantern appears where the card is."
-          : "The demo to ship. A printed card, a camera, and a lantern that opens in the air."}</p>
-      </div>
-      <div class="os-wonder-actions">
-        ${demo
-          ? `<button type="button" class="os-create is-wonder" data-action="open-demo">Open the demo</button>
-             <button type="button" class="os-ghost" data-action="show-demo-sign">Show the card</button>`
-          : `<button type="button" class="os-create is-wonder" data-action="place-demo">Place the demo</button>
-             <button type="button" class="os-ghost" data-action="show-sample">Show the card</button>`}
-      </div>
-    </section>`;
+    </article>`;
 }
 
 function renderLibrary() {
   const shown = visibleSets();
-  const fresh = state.sets.length === 0;
-  const active = state.sets.filter(isActive).length;
-  const unlocks = state.sets.reduce((sum, set) => sum + Number(set.impressions || 0), 0);
-  const rows = shown.map((set) => {
-    const status = statusOf(set);
-    return `
-      <tr class="${set.demo === DEMO_ID ? "is-demo" : ""}">
-        <td>
-          <div class="os-host">
-            <span class="os-host-mark" data-body="${set.demo === DEMO_ID ? "lantern" : "square"}">${esc(String(set.name || "M").charAt(0).toUpperCase())}</span>
-            <div>
-              <strong>${esc(set.name || "Untitled experience")}</strong>
-              <small>ID: ${esc(shortId(set.id))}</small>
-            </div>
-          </div>
-        </td>
-        <td class="os-role">${esc(revealOf(set))}</td>
-        <td><span class="os-status is-${status}">${statusLabel(set)}</span></td>
-        <td>
-          <div class="os-actions">
-            ${isActive(set) ? `<button type="button" class="os-mini is-open" data-action="camera" data-id="${esc(set.id)}">Open</button>` : ""}
-            <button type="button" class="os-mini" data-action="edit" data-id="${esc(set.id)}">Edit</button>
-            <button type="button" class="os-mini" data-action="copy-code" data-id="${esc(set.id)}">${state.copiedId === set.id && state.copiedOk ? "Copied" : "Copy code"}</button>
-          </div>
-        </td>
-      </tr>`;
-  }).join("");
-  const emptyCopy = fresh
-    ? "No experiences yet. Create your first experience to get started."
-    : "No experiences match that search.";
-
+  const samples = sampleProjects();
+  const searching = Boolean(query);
   view.innerHTML = `
-    <div class="os-head">
-      <div>
-        <h1>${fresh ? "Create your first experience" : "Experiences"}</h1>
-        <p>${fresh
-          ? "Create or upload a GLB, then move it down the line."
-          : "Each experience starts with a GLB. The line carries it to a target image and publish."}</p>
-      </div>
-      <button type="button" class="os-create" data-action="new-set">${fresh ? "Create your first experience" : "+ Create experience"}</button>
-    </div>
-    ${wonderBanner()}
-    ${state.error ? `<p class="ai-error" role="alert">${esc(state.error)}</p>` : ""}
-    <div class="os-stats">
-      <article class="os-stat">
-        <div>
-          <p class="os-stat-label">Total experiences</p>
-          <p class="os-stat-value">${state.sets.length}</p>
-          <p class="os-stat-meta">on this shelf</p>
+    <div class="ox-explore">
+      <p class="ox-page">Explore Horseradish</p>
+      ${state.error ? `<p class="ai-error" role="alert">${esc(state.error)}</p>` : ""}
+      ${searching ? "" : `
+        <div class="ox-hero">
+          <article class="ox-start">
+            <div class="ox-start-copy">
+              <h2>Start building</h2>
+              <p>Explore the basics of the studio.</p>
+              <button type="button" class="ox-play" data-action="new-set">Start</button>
+            </div>
+            <video src="create.mp4" muted playsinline loop autoplay></video>
+          </article>
+          <div class="ox-hero-side">
+            <article class="ox-side">
+              <div>
+                <h3>Works in the browser</h3>
+                <p>Point a phone at the picture. The model appears on it.</p>
+                <button type="button" class="ox-play ox-play-light" data-action="show-marvins">Show the sign</button>
+              </div>
+              <img src="${esc(MARVINS.signUrl)}" alt="Marvin's sign">
+            </article>
+            <article class="ox-side ox-talk">
+              <div>
+                <h3>Talk to Horseradish</h3>
+                <p>The owner is the person inside. Send the work.</p>
+              </div>
+              <a class="ox-outline" href="contact.html">Let's talk</a>
+            </article>
+          </div>
+        </div>`}
+      <section class="ox-block">
+        <div class="ox-section-head">
+          <div>
+            <h2>${searching ? "Matching samples" : "Sample projects are ready to try"}</h2>
+            <p>Show the picture on one screen. Open the camera on another.</p>
+          </div>
         </div>
-        <span class="os-stat-icon is-blue" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M12 3a5 5 0 0 0-5 5v3.2L5.2 14.2A1 1 0 0 0 6 16h12a1 1 0 0 0 .8-1.8L17 11.2V8a5 5 0 0 0-5-5zm0 18a2.4 2.4 0 0 0 2.3-2h-4.6A2.4 2.4 0 0 0 12 21z" fill="currentColor"/></svg>
-        </span>
-      </article>
-      <article class="os-stat">
-        <div>
-          <p class="os-stat-label">Active experiences</p>
-          <p class="os-stat-value">${active}</p>
-          <p class="os-stat-meta${active ? " is-live" : ""}">${active ? "ready for a camera" : "none ready for a camera"}</p>
-        </div>
-        <span class="os-stat-icon is-green" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 10-14h-7l0-6z" fill="currentColor"/></svg>
-        </span>
-      </article>
-      <article class="os-stat">
-        <div>
-          <p class="os-stat-label">Unlocks</p>
-          <p class="os-stat-value">${unlocks}</p>
-          <p class="os-stat-meta">a camera opened the experience</p>
-        </div>
-        <span class="os-stat-icon is-purple" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M9.2 16.2L4.8 11.8l1.4-1.4 3 3 8-8 1.4 1.4-9.4 9.4z" fill="currentColor"/></svg>
-        </span>
-      </article>
-    </div>
-    <div class="os-split">
-      <section class="os-panel">
-        <div class="os-panel-head">
-          <h2>Active experiences</h2>
-          ${fresh ? "" : `<button type="button" class="os-text-link" data-action="show-all">View all</button>`}
-        </div>
-        ${rows ? `
-          <div class="os-table-wrap">
-            <table class="os-table">
-              <thead>
-                <tr>
-                  <th>Experience</th>
-                  <th>Content</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>${rows}</tbody>
-            </table>
-          </div>` : `<p class="os-empty">${emptyCopy}</p>`}
-        ${fresh ? `<p class="os-hint"><button type="button" class="os-text-link" data-action="preview-sample">Start from the sample card</button></p>` : ""}
-        ${state.copiedId && !state.copiedOk ? `<pre class="ai-code" id="ai-code">${esc(state.copiedCode || "")}</pre><p class="os-hint">The browser blocked automatic copy. The code above is selected.</p>` : ""}
+        ${samples.length
+          ? `<div class="ox-samples">${samples.map(sampleCard).join("")}</div>`
+          : `<p class="ox-empty">No samples match that search.</p>`}
       </section>
-      <section class="os-panel">
-        <div class="os-panel-head">
-          <h2>Recent Activity</h2>
-          <button type="button" class="os-text-link" data-action="show-logs">View full logs</button>
+      ${searching ? "" : `
+        <section class="ox-block">
+          <h2 class="ox-block-title">Getting started</h2>
+          <article class="ox-guide">
+            <div>
+              <h2>What can you do with Horseradish?</h2>
+              <p>A picture, a model, and a camera. The model sits on the picture.</p>
+              <button type="button" class="ox-play" data-action="new-set">Start</button>
+            </div>
+            <img src="${esc(MARVINS.signUrl)}" alt="Marvin's sign, the picture the camera recognizes">
+          </article>
+        </section>
+        <section class="ox-block">
+          <h2 class="ox-block-title">Studio steps</h2>
+          <div class="ox-steps">
+            <button type="button" data-action="new-set">
+              <span>Model</span>
+              <small>Start with a .glb, or pick a shape.</small>
+            </button>
+            <button type="button" data-action="new-set">
+              <span>Picture</span>
+              <small>Add the photo the camera should recognize.</small>
+            </button>
+            <button type="button" data-action="new-set">
+              <span>Place</span>
+              <small>Sit the model on the photo.</small>
+            </button>
+            <button type="button" data-action="new-set">
+              <span>Publish</span>
+              <small>Open the camera and point it at that picture.</small>
+            </button>
+          </div>
+        </section>`}
+      <section class="ox-block">
+        <div class="ox-section-head">
+          <div>
+            <h2>Your experiences</h2>
+            <p>${shown.length ? "Open a camera, edit a scene, or copy the embed code." : "Create a scene and it lands here."}</p>
+          </div>
+          <button type="button" class="ox-outline" data-action="new-set">New scene</button>
         </div>
-        <ul class="os-activity">${activityList(8)}</ul>
+        ${shown.length
+          ? `<div class="ox-samples">${shown.map(experienceCard).join("")}</div>`
+          : `<p class="ox-empty">${searching ? "No experiences match that search." : "No experiences yet."}</p>`}
+        ${state.copiedId && !state.copiedOk ? `<pre class="ai-code" id="ai-code">${esc(state.copiedCode || "")}</pre><p class="ox-empty">The browser blocked automatic copy. The code above is selected.</p>` : ""}
       </section>
     </div>`;
+}
+
+function sceneReady() {
+  return Boolean(state.scene && state.scene.image && String(state.scene.name || "").trim());
+}
+
+function libraryChoices() {
+  const rows = [
+    { id: "marvins", label: "Marvins sign" },
+    { id: "sample", label: "Sample card" },
+  ];
+  state.sets.forEach((set) => {
+    const target = (set.targets || []).find((item) => item.imageBlob);
+    if (!target) return;
+    rows.push({ id: `set:${set.id}`, label: `${set.name || "Experience"} · ${target.name || "Picture"}` });
+  });
+  return rows;
+}
+
+function renderScene() {
+  const scene = state.scene || { name: "My scene", picker: false, help: false, image: null };
+  const preview = scene.image ? urlFor(scene.image.blob) : "";
+  const choices = libraryChoices();
+  view.innerHTML = `
+    <form class="ox-scene">
+      <h1>Let's add a new scene</h1>
+      <p class="ox-scene-lead">Where do you want the content of your AR scene to appear?<br>On a recognisable image, or anywhere in front of the user.</p>
+      ${state.error ? `<p class="ai-error" role="alert">${esc(state.error)}</p>` : ""}
+      <div class="ox-modes">
+        <div class="ox-mode is-on">
+          <div class="ox-mode-art ox-mode-image">
+            <span class="ox-frame"></span>
+            <span class="ox-object"></span>
+            <button type="button" class="ox-q" data-action="scene-help" aria-expanded="${scene.help ? "true" : "false"}" aria-label="What's this?">?</button>
+          </div>
+          <div class="ox-mode-foot">
+            <span>Image</span>
+            <span class="ox-check" aria-hidden="true"></span>
+          </div>
+        </div>
+        <div class="ox-mode">
+          <div class="ox-mode-art ox-mode-surface">
+            <span class="ox-floor"></span>
+            <span class="ox-prop"></span>
+          </div>
+          <div class="ox-mode-foot">
+            <span>Surface</span>
+            <span class="ox-radio" aria-hidden="true"></span>
+          </div>
+        </div>
+      </div>
+      ${scene.help ? `<p class="ox-help">The camera looks for this picture, then places the model on it.</p>` : ""}
+      <div class="ox-label-row">
+        <label for="ox-scene-name">Scene name</label>
+        <span class="ox-required">Required field</span>
+      </div>
+      <input id="ox-scene-name" data-field="scene-name" value="${esc(scene.name)}" maxlength="60" autocomplete="off">
+      <div class="ox-label-row">
+        <p id="ox-image-label">Image to trigger AR content</p>
+      </div>
+      <div class="ox-drop${scene.image ? " has-image" : ""}" id="ox-drop">
+        ${preview
+          ? `<img src="${esc(preview)}" alt="">
+             <p>${esc(scene.image.label || "Picture")}</p>
+             <button type="button" data-action="scene-upload">Replace image</button>`
+          : `<button type="button" data-action="scene-library"><strong>Select image</strong> from library</button>
+             <button type="button" data-action="scene-upload"><strong>upload</strong> from file</button>
+             <p>or drop here to upload</p>`}
+      </div>
+      ${scene.picker ? `
+        <div class="ox-library" role="listbox" aria-label="Image library">
+          ${choices.map((choice) => `<button type="button" data-action="scene-choose" data-id="${esc(choice.id)}">${esc(choice.label)}</button>`).join("")}
+        </div>` : ""}
+      <button type="submit" class="ox-go" ${sceneReady() ? "" : "disabled"}>Create project &amp; AR scene</button>
+    </form>`;
 }
 
 function renderLogs() {
@@ -1308,6 +1450,7 @@ async function onClick(event) {
 
   if (action === "back-library") {
     state.error = "";
+    state.scene = null;
     state.view = "library";
     render();
     return;
@@ -1319,21 +1462,35 @@ async function onClick(event) {
   }
 
   if (action === "new-set") {
-    const set = {
-      id: crypto.randomUUID(),
-      name: UNTITLED,
-      updated: Date.now(),
-      mindDirty: true,
-      mindBlob: null,
-      targets: [],
-      owner,
-    };
-    state.draft = set;
-    state.selectedId = null;
-    state.station = "glb";
+    openScene();
+    return;
+  }
+
+  if (action === "show-library") {
+    state.scene = null;
     state.error = "";
-    state.view = "editor";
+    state.view = "library";
+    markNav("models");
     render();
+    return;
+  }
+
+  if (action === "scene-help") {
+    if (!state.scene) return;
+    state.scene.help = !state.scene.help;
+    render();
+    return;
+  }
+
+  if (action === "scene-library") {
+    if (!state.scene) return;
+    state.scene.picker = !state.scene.picker;
+    render();
+    return;
+  }
+
+  if (action === "scene-choose") {
+    await chooseSceneImage(id);
     return;
   }
 
@@ -1600,6 +1757,12 @@ async function onClick(event) {
 
 function onInput(event) {
   const field = event.target.dataset.field;
+  if (field === "scene-name" && state.scene) {
+    state.scene.name = event.target.value.slice(0, 60);
+    const go = view.querySelector(".ox-go");
+    if (go) go.disabled = !sceneReady();
+    return;
+  }
   if (!field || !state.draft) return;
   if (field === "set-name") {
     state.draft.name = event.target.value.slice(0, 60);
@@ -1769,6 +1932,113 @@ async function open() {
   });
 }
 
+function openScene() {
+  state.sceneReturn = state.view === "projects" ? "projects" : "library";
+  state.scene = { name: "My scene", picker: false, help: false, image: null };
+  state.error = "";
+  state.view = "scene";
+  render();
+  const input = document.getElementById("ox-scene-name");
+  if (input) {
+    input.focus();
+    input.select();
+  }
+}
+
+async function rememberSceneImage(blob, width, height, label) {
+  if (!state.scene) return;
+  state.scene.image = { blob, width, height, label };
+  state.scene.picker = false;
+  state.error = "";
+  render();
+}
+
+async function chooseSceneImage(id) {
+  if (!state.scene || !id) return;
+  if (id.startsWith("set:")) {
+    const set = state.sets.find((item) => item.id === id.slice(4));
+    const target = set && (set.targets || []).find((item) => item.imageBlob);
+    if (!target) return;
+    await rememberSceneImage(target.imageBlob, target.width, target.height, target.name || "Picture");
+    return;
+  }
+  const url = id === "marvins" ? MARVINS.signUrl : SAMPLE.signUrl;
+  const label = id === "marvins" ? "Marvins sign" : "Sample card";
+  showBusy("Loading that picture…", null);
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("That picture could not load. Check your connection and try again.");
+  const blob = await response.blob();
+  const image = await blobToImage(blob);
+  hideBusy();
+  await rememberSceneImage(blob, image.naturalWidth, image.naturalHeight, label);
+}
+
+async function takeSceneFile(file) {
+  if (!state.scene || !file) return;
+  if (!isImageFile(file)) throw new Error("Choose a JPEG, PNG, or WebP.");
+  showBusy("Preparing the picture…", null);
+  const image = await fileToSign(file);
+  hideBusy();
+  await rememberSceneImage(image.blob, image.width, image.height, prettyName(file.name));
+}
+
+async function createScene() {
+  const scene = state.scene;
+  if (!scene || !scene.image || !String(scene.name || "").trim()) return;
+  const set = {
+    id: crypto.randomUUID(),
+    name: scene.name.trim().slice(0, 60),
+    updated: Date.now(),
+    mindDirty: true,
+    mindBlob: null,
+    targets: [],
+    owner,
+  };
+  const target = {
+    id: crypto.randomUUID(),
+    name: scene.image.label || "Target image",
+    width: scene.image.width,
+    height: scene.image.height,
+    featureCount: null,
+    imageBlob: scene.image.blob,
+    replacement: defaultReplacement(),
+  };
+  set.targets.push(target);
+  state.draft = set;
+  state.selectedId = target.id;
+  state.station = "glb";
+  state.error = "";
+  pushEvent(set, "created");
+  showBusy("Saving the photo to your account…", null);
+  await saveSet(set, owner);
+  state.scene = null;
+  upsert(set);
+  try {
+    await publishLocalPhotos();
+  } catch (error) {
+    state.error = message(error);
+  }
+  hideBusy();
+  state.view = "editor";
+  render();
+}
+
+function projects() {
+  markNav("projects");
+  if (state.view === "stage") {
+    state.returnView = "projects";
+    exitStage();
+    return;
+  }
+  if (state.view === "projects") return;
+  state.displaySample = false;
+  state.displayMarvins = false;
+  state.scene = null;
+  state.error = "";
+  state.view = "projects";
+  render();
+}
+
 function home() {
   markNav("models");
   const stay = state.view === "library" && !state.displaySample && !state.copiedId;
@@ -1781,6 +2051,7 @@ function home() {
     return;
   }
   state.displaySample = false;
+  state.scene = null;
   state.error = "";
   state.view = "library";
   render();
@@ -1794,6 +2065,7 @@ function logs() {
     return;
   }
   state.displaySample = false;
+  state.scene = null;
   state.error = "";
   state.view = "logs";
   render();
@@ -1803,6 +2075,7 @@ function search(value) {
   query = String(value || "").trim().toLowerCase();
   if (state.view === "stage") return;
   state.displaySample = false;
+  state.scene = null;
   state.view = "library";
   render();
 }
@@ -1838,7 +2111,16 @@ if (view) {
       document.getElementById("ai-rep-model")?.click();
       return;
     }
+    if (action === "scene-upload") {
+      document.getElementById("ai-scene-file")?.click();
+      return;
+    }
     onClick(event).catch(fail);
+  });
+  view.addEventListener("submit", (event) => {
+    if (!(event.target instanceof HTMLFormElement) || !event.target.classList.contains("ox-scene")) return;
+    event.preventDefault();
+    createScene().catch(fail);
   });
   view.addEventListener("focusin", (event) => {
     clearUntitled(nameField(event.target));
@@ -1852,14 +2134,27 @@ if (view) {
   });
   view.addEventListener("input", onInput);
   view.addEventListener("dragover", (event) => {
+    if (state.view === "scene") {
+      event.preventDefault();
+      document.getElementById("ox-drop")?.classList.add("is-dropping");
+      return;
+    }
     if (state.view !== "editor") return;
     event.preventDefault();
     document.getElementById("ai-sign-list")?.classList.add("is-dropping");
   });
   view.addEventListener("dragleave", () => {
+    document.getElementById("ox-drop")?.classList.remove("is-dropping");
     document.getElementById("ai-sign-list")?.classList.remove("is-dropping");
   });
   view.addEventListener("drop", (event) => {
+    if (state.view === "scene") {
+      event.preventDefault();
+      document.getElementById("ox-drop")?.classList.remove("is-dropping");
+      const file = event.dataTransfer?.files?.[0];
+      if (file) takeSceneFile(file).catch(fail);
+      return;
+    }
     if (state.view !== "editor") return;
     event.preventDefault();
     document.getElementById("ai-sign-list")?.classList.remove("is-dropping");
@@ -1870,6 +2165,21 @@ if (view) {
 document.getElementById("ai-hud-exit")?.addEventListener("click", exitStage);
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && state.view === "stage") exitStage();
+  if (event.key === "Escape" && state.view === "scene") {
+    const back = state.sceneReturn === "projects" ? "projects" : "library";
+    state.scene = null;
+    state.sceneReturn = "";
+    state.error = "";
+    state.view = back;
+    markNav(back === "projects" ? "projects" : "models");
+    render();
+  }
+});
+
+document.getElementById("ai-scene-file")?.addEventListener("change", (event) => {
+  const file = event.target.files?.[0];
+  event.target.value = "";
+  if (file) takeSceneFile(file).catch(fail);
 });
 
 document.getElementById("ai-sign-files")?.addEventListener("change", (event) => {
@@ -1916,5 +2226,5 @@ document.getElementById("ai-rep-model")?.addEventListener("change", (event) => {
   }).catch(fail);
 });
 
-window.HorseradishAfterImage = { open, home, logs, search };
+window.HorseradishAfterImage = { open, home, logs, search, projects };
 document.dispatchEvent(new Event("afterimage-ready"));

@@ -689,7 +689,7 @@
     }
 
     function showView(name) {
-        const section = name === "models" || name === "logs" ? "studio" : name;
+        const section = name === "models" || name === "logs" || name === "projects" ? "studio" : name;
         document.querySelectorAll(".os-view").forEach(function (view) {
             view.hidden = view.getAttribute("data-view") !== section;
         });
@@ -1010,6 +1010,9 @@
             showView(name);
             if (!window.HorseradishAfterImage) {
                 return;
+            }
+            if (name === "projects") {
+                window.HorseradishAfterImage.projects();
             }
             if (name === "models") {
                 window.HorseradishAfterImage.home();

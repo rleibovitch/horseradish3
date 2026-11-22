@@ -1918,16 +1918,16 @@ body.lab-open .lab-hero h1 {
 
 body.os-body {
     color-scheme: light;
-    --os-bg: #f6f3ec;
-    --os-ink: #1c1917;
-    --os-muted: #57534e;
-    --os-faint: #78716c;
-    --os-line: #e6e1d6;
-    --os-panel: #fffcf8;
-    --os-sunken: #f4f0e8;
-    --os-rail: #fffcf8;
-    --os-nav: #57534e;
-    --os-nav-hover: #f3eee4;
+    --os-bg: #eef0f3;
+    --os-ink: #1a1d24;
+    --os-muted: #5c6370;
+    --os-faint: #8b919c;
+    --os-line: #e5e7eb;
+    --os-panel: #ffffff;
+    --os-sunken: #f3f4f6;
+    --os-rail: #ffffff;
+    --os-nav: #4b5160;
+    --os-nav-hover: #f3f4f6;
     --os-hover: rgba(28, 25, 23, 0.06);
     --os-info: #1d4ed8;
     --os-accent-soft: rgba(29, 78, 216, 0.1);
@@ -1944,10 +1944,7 @@ body.os-body {
     --os-wonder: #fff8ee;
     --os-wonder-ink: #44403c;
     --os-ghost-line: #d6d3d1;
-    background:
-        radial-gradient(880px 420px at 100% -12%, rgba(232, 168, 74, 0.2), transparent 58%),
-        radial-gradient(640px 360px at 0% 110%, rgba(29, 78, 216, 0.07), transparent 52%),
-        var(--os-bg);
+    background: var(--os-bg);
     color: var(--os-ink);
     font-family: Inter, var(--font);
 }
@@ -3767,5 +3764,846 @@ body.home-lab .footer a {
     body.home-lab .look-card,
     body.home-lab .home-look-switch button {
         transition: none;
+    }
+}
+
+.ox-explore,
+.ox-scene {
+    font-family: Inter, "Segoe UI", sans-serif;
+    color: #1a1d24;
+}
+
+.os-app .ox-explore h2,
+.os-app .ox-explore h3,
+.os-app .ox-scene h1 {
+    font-family: Inter, "Segoe UI", sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    color: #1a1d24;
+}
+
+.ox-page {
+    margin: 0 0 1rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #3c4250;
+}
+
+.ox-hero {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+}
+
+.ox-start,
+.ox-side,
+.ox-sample,
+.ox-guide,
+.ox-talk {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(22, 24, 35, 0.06);
+}
+
+.ox-start {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    min-height: 280px;
+    overflow: hidden;
+    background: #6a35e8;
+    color: #fff;
+}
+
+.ox-start-copy {
+    padding: 1.5rem 0.4rem 1.4rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.7rem;
+}
+
+.os-app .ox-start h2,
+.ox-start p {
+    color: #fff;
+    margin: 0;
+}
+
+.os-app .ox-start h2 {
+    font-size: 2rem;
+}
+
+.ox-start p,
+.ox-side p,
+.ox-guide p,
+.ox-section-head p {
+    color: #5c6370;
+    margin: 0.25rem 0 0;
+    font-size: 0.95rem;
+}
+
+.ox-start p {
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.ox-start video,
+.ox-side img,
+.ox-guide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ox-play {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border: 0;
+    border-radius: 999px;
+    background: #fff;
+    color: #6a35e8;
+    font: inherit;
+    font-weight: 700;
+    padding: 0.55rem 0.95rem;
+    cursor: pointer;
+}
+
+.ox-play::before {
+    content: "";
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 6px 0 6px 10px;
+    border-color: transparent transparent transparent #6a35e8;
+}
+
+.ox-play-light {
+    background: #efeaff;
+}
+
+.ox-hero-side {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.ox-side {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.1rem 1.15rem;
+    min-height: 132px;
+    overflow: hidden;
+}
+
+.ox-side img {
+    width: 148px;
+    height: 96px;
+    border-radius: 12px;
+    flex-shrink: 0;
+    object-fit: contain;
+    background: #f3f4f6;
+}
+
+.os-app .ox-side h3,
+.os-app .ox-guide h2,
+.os-app .ox-block-title,
+.os-app .ox-section-head h2 {
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.ox-talk {
+    box-shadow: none;
+    border: 1px solid #eceef2;
+}
+
+.ox-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1.5px solid #6a35e8;
+    color: #6a35e8;
+    background: #fff;
+    border-radius: 999px;
+    padding: 0.45rem 0.85rem;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.ox-outline:hover,
+.ox-play:hover {
+    filter: brightness(0.97);
+}
+
+.ox-block {
+    margin: 0 0 1.8rem;
+}
+
+.ox-section-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.9rem;
+}
+
+.ox-block-title {
+    margin: 0 0 0.8rem;
+}
+
+.ox-samples {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+.ox-sample {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.ox-sample img,
+.ox-sample-empty {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: contain;
+    background: #f3f4f6;
+}
+
+.ox-sample-empty {
+    display: grid;
+    place-items: center;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #6a35e8;
+}
+
+.ox-sample-body {
+    padding: 0.85rem 0.95rem 1rem;
+}
+
+.ox-sample-body p {
+    margin: 0 0 0.25rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8b919c;
+}
+
+.os-app .ox-sample h3 {
+    font-size: 1rem;
+    margin: 0 0 0.55rem;
+}
+
+.ox-sample-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+}
+
+.ox-sample-actions button,
+.ox-sample-actions a {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    color: #6a35e8;
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.ox-guide {
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    min-height: 240px;
+    overflow: hidden;
+}
+
+.ox-guide div {
+    padding: 1.8rem 1.6rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.os-app .ox-guide h2 {
+    font-size: 1.7rem;
+}
+
+.ox-steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.9rem;
+}
+
+.ox-steps button {
+    min-height: 148px;
+    border: 0;
+    border-radius: 16px;
+    background:
+        linear-gradient(180deg, rgba(18, 18, 24, 0.25), rgba(18, 18, 24, 0.72)),
+        #2a2438;
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 1rem;
+    text-align: center;
+}
+
+.ox-steps span {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.ox-steps small {
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.8rem;
+    line-height: 1.35;
+}
+
+.ox-empty {
+    margin: 0;
+    color: #5c6370;
+}
+
+.ox-scene {
+    width: min(640px, 100%);
+    margin: 1.5rem auto 2rem;
+    text-align: center;
+}
+
+.os-app .ox-scene h1 {
+    font-size: 1.7rem;
+    margin: 0 0 0.7rem;
+}
+
+.ox-scene-lead {
+    margin: 0 0 1.4rem;
+    color: #5c6370;
+    line-height: 1.45;
+}
+
+.ox-modes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.3rem;
+    text-align: left;
+}
+
+.ox-mode {
+    background: #fff;
+    border: 2px solid transparent;
+    border-radius: 14px;
+    box-shadow: 0 8px 22px rgba(22, 24, 35, 0.06);
+    overflow: hidden;
+}
+
+.ox-mode.is-on {
+    border-color: #2f6fed;
+}
+
+.ox-mode-art {
+    position: relative;
+    height: 168px;
+    margin: 10px 10px 0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.ox-mode-image {
+    background: linear-gradient(#d5edf6, #f6f3ee 70%);
+}
+
+.ox-frame {
+    position: absolute;
+    left: 18%;
+    right: 18%;
+    bottom: 22px;
+    height: 78px;
+    border-radius: 6px;
+    background:
+        linear-gradient(#f2c14e, #e07a3d 40%, #3d7ea6);
+    box-shadow: 0 10px 0 #efe7dc;
+}
+
+.ox-object {
+    position: absolute;
+    left: 42%;
+    bottom: 78px;
+    width: 36px;
+    height: 48px;
+    border-radius: 18px 18px 8px 8px;
+    background: #f4f7fb;
+    box-shadow: inset 0 -10px 0 #8eb4d4, 8px 16px 0 rgba(0, 0, 0, 0.06);
+}
+
+.ox-mode-surface {
+    background: linear-gradient(#f7f5f2, #e7e1d8);
+}
+
+.ox-floor {
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    bottom: 28px;
+    height: 54px;
+    background: rgba(255, 255, 255, 0.55);
+    transform: perspective(120px) rotateX(48deg);
+    border: 2px solid rgba(255, 255, 255, 0.9);
+}
+
+.ox-prop {
+    position: absolute;
+    left: 38%;
+    bottom: 58px;
+    width: 48px;
+    height: 62px;
+    border-radius: 8px 8px 4px 4px;
+    background: linear-gradient(#49c2e0, #1f8fb3);
+    box-shadow: 0 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.ox-q {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 0;
+    background: #fff;
+    color: #6b7280;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ox-mode-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0.9rem 0.85rem;
+    font-weight: 600;
+}
+
+.ox-check,
+.ox-radio {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    box-sizing: border-box;
+}
+
+.ox-check {
+    background: #2f6fed;
+    position: relative;
+}
+
+.ox-check::after {
+    content: "";
+    position: absolute;
+    left: 7px;
+    top: 4px;
+    width: 5px;
+    height: 9px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.ox-radio {
+    border: 2px solid #c5c9d2;
+}
+
+.ox-help {
+    margin: -0.4rem 0 1rem;
+    color: #5c6370;
+    font-size: 0.92rem;
+}
+
+.ox-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0.85rem 0 0.4rem;
+    text-align: left;
+    font-weight: 700;
+}
+
+.ox-label-row label,
+.ox-label-row p {
+    margin: 0;
+}
+
+.ox-required {
+    color: #8b919c;
+    font-weight: 600;
+    font-size: 0.92rem;
+    padding-left: 0.7rem;
+    border-left: 3px solid #e0a325;
+}
+
+.ox-scene input[data-field="scene-name"] {
+    width: 100%;
+    height: 48px;
+    border: 2px solid #2f6fed;
+    border-radius: 8px;
+    padding: 0 0.8rem;
+    font: inherit;
+    font-size: 1rem;
+    color: #1a1d24;
+    background: #fff;
+}
+
+.ox-drop {
+    min-height: 148px;
+    margin-top: 0.35rem;
+    border: 1.5px dashed #d5d8e0;
+    border-radius: 12px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 1.2rem 1rem;
+    color: #3c4250;
+}
+
+.ox-drop.is-dropping {
+    border-color: #2f6fed;
+    background: #f5f8ff;
+}
+
+.ox-drop button {
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+    color: #1a1d24;
+}
+
+.ox-drop p {
+    margin: 0;
+    color: #6b7280;
+}
+
+.ox-drop img {
+    width: 120px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.ox-library {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-top: 0.6rem;
+}
+
+.ox-library button {
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 8px;
+    padding: 0.65rem 0.8rem;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.ox-library button:hover {
+    border-color: #2f6fed;
+}
+
+.ox-go {
+    width: 100%;
+    margin-top: 1.3rem;
+    height: 48px;
+    border: 0;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #ff2f86, #ff4b4b);
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.ox-go:disabled {
+    background: #d5d6dc;
+    color: #fff;
+    cursor: default;
+}
+
+@media (max-width: 1100px) {
+    .ox-samples,
+    .ox-steps {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 800px) {
+    .ox-hero,
+    .ox-start,
+    .ox-guide,
+    .ox-modes {
+        grid-template-columns: 1fr;
+    }
+
+    .ox-start video {
+        height: 180px;
+    }
+
+    .ox-side {
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 640px) {
+    .ox-samples,
+    .ox-steps {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ox-projects {
+    min-height: calc(100vh - 8rem);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.4rem;
+    align-items: stretch;
+    align-content: center;
+    width: min(980px, 100%);
+    margin: 0 auto;
+    padding: 1.2rem 0 2rem;
+}
+
+.ox-project-card {
+    background: #fff;
+    border-radius: 22px;
+    box-shadow: 0 12px 32px rgba(22, 24, 35, 0.06);
+    padding: 1.7rem 1.5rem 1.6rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    overflow: hidden;
+}
+
+.os-app .ox-project-card h2 {
+    font-family: Inter, "Segoe UI", sans-serif;
+    font-weight: 800;
+    font-size: 1.85rem;
+    letter-spacing: -0.035em;
+    line-height: 1.15;
+    margin: 1.15rem 0 0.6rem;
+    max-width: 15rem;
+}
+
+.ox-project-card p {
+    margin: 0;
+    max-width: 34ch;
+    color: #5c6370;
+    line-height: 1.45;
+}
+
+.ox-go-pill {
+    width: auto;
+    min-width: 9.5rem;
+    margin-top: 1.35rem;
+    padding: 0 1.35rem;
+    border-radius: 999px;
+}
+
+.ox-outline-lg {
+    margin-top: 1.15rem;
+    min-height: 44px;
+    padding: 0 1.15rem;
+    font-size: 0.82rem;
+}
+
+.ox-tree {
+    width: min(100%, 280px);
+    margin-top: 0.4rem;
+}
+
+.ox-tree-board {
+    border: 1.5px solid #1c1f27;
+    border-radius: 12px;
+    padding: 0.85rem 0.85rem 0.75rem;
+    text-align: left;
+    background: #f7f5ff;
+}
+
+.ox-tree-project {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    font-weight: 700;
+}
+
+.ox-folder {
+    width: 16px;
+    height: 12px;
+    border: 1.6px solid #1c1f27;
+    border-radius: 2px;
+    position: relative;
+}
+
+.ox-folder::before {
+    content: "";
+    position: absolute;
+    left: 1px;
+    top: -4px;
+    width: 7px;
+    height: 4px;
+    border: 1.6px solid #1c1f27;
+    border-bottom: 0;
+    border-radius: 2px 2px 0 0;
+}
+
+.ox-tree-label {
+    margin: 0.7rem 0 0.35rem 1.3rem;
+    color: #6d28d9;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.ox-tree-scenes {
+    margin-left: 0.55rem;
+    padding-left: 0.85rem;
+    border-left: 1.5px solid #d9d4ea;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.ox-tree-scene {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 42px;
+    padding: 0.25rem 0.45rem;
+    border: 1.5px solid #ddd8ea;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #3c4250;
+}
+
+.ox-tree-scene img {
+    width: 36px;
+    height: 26px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.ox-tree-scene.is-on {
+    border-color: #7c3aed;
+    background: #f4edff;
+    color: #5b21b6;
+}
+
+.ox-gem {
+    width: 12px;
+    height: 12px;
+    transform: rotate(45deg);
+    border: 1.5px solid currentColor;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.ox-tree-scene.is-on .ox-gem {
+    background: #7c3aed;
+    border-color: #7c3aed;
+}
+
+.ox-project-library {
+    padding-bottom: 0;
+}
+
+.ox-browsers {
+    margin-top: auto;
+    padding-top: 1.4rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.7rem;
+    width: calc(100% + 1rem);
+}
+
+.ox-browser {
+    width: 46%;
+    background: #fff;
+    border: 1px solid #e6e8ee;
+    border-bottom: 0;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 10px 24px rgba(22, 24, 35, 0.08);
+    overflow: hidden;
+}
+
+.ox-browser-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    height: 22px;
+    padding: 0 0.45rem;
+    background: #f4f5f7;
+    color: #8b919c;
+    font-size: 0.62rem;
+}
+
+.ox-browser-bar i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #d5d8e0;
+}
+
+.ox-browser-bar span {
+    margin-left: 0.25rem;
+}
+
+.ox-browser img {
+    display: block;
+    width: 100%;
+    height: 168px;
+    object-fit: contain;
+    object-position: center;
+    background: #f3f4f6;
+}
+
+@media (max-width: 800px) {
+    .ox-projects {
+        grid-template-columns: 1fr;
+        min-height: 0;
     }
 }
