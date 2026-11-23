@@ -397,9 +397,13 @@ function statusLabel(set) {
 }
 
 function httpUrl(value) {
+  let raw = String(value || "").trim();
+  if (!raw) return "";
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(raw)) raw = `https://${raw.replace(/^\/+/, "")}`;
   try {
-    const url = new URL(String(value || "").trim());
+    const url = new URL(raw);
     if (url.protocol !== "http:" && url.protocol !== "https:") return "";
+    if (!url.hostname || !url.hostname.includes(".")) return "";
     return url.href;
   } catch (error) {
     return "";
@@ -472,6 +476,27 @@ function stationFor(set) {
   if (!hasTarget(set)) return "target";
   if (set.mindBlob && !set.mindDirty) return "publish";
   return "place";
+}
+
+function stationBlock(set, id) {
+  if (!modifierReady(set)) {
+    const type = modifierType(set);
+    if (type === "link") return "Add the page or the download, then continue.";
+    if (type === "animation") return "Upload the animation, then continue.";
+    if (type === "model") return "Upload the .glb, then continue.";
+    if (type === "image") return "Choose the overlay, then continue.";
+    return "Choose what the object opens, then continue.";
+  }
+  if (id !== "target" && !hasTarget(set)) return "Add a photo of the object, then continue.";
+  return "Finish this step, then continue.";
+}
+
+function paintStations() {
+  if (!view || !state.draft) return;
+  view.querySelectorAll("[data-action='station']").forEach((button) => {
+    if (button.dataset.advance) return;
+    button.disabled = !stationReached(state.draft, button.dataset.station);
+  });
 }
 
 function rememberGlb(blob, name) {
@@ -971,7 +996,7 @@ function modifierFields(set) {
     return `
       <label class="ai-name">
         <span class="os-field-label">Link</span>
-        <input data-field="href" type="url" inputmode="url" placeholder="https://" value="${esc(source.href || "")}" autocomplete="off">
+        <input data-field="href" type="text" inputmode="url" placeholder="https:// or a download link" value="${esc(source.href || "")}" autocomplete="off">
       </label>
       <label class="ai-name">
         <span class="os-field-label">Label</span>
@@ -1036,7 +1061,7 @@ function stationMarkup(set) {
         <p>A link, an animation, a 3D model, or an image overlay. The tally counts when it is impressed on a screen.</p>
         <div class="ai-chips" role="group" aria-label="What it opens">${choices}</div>
         ${modifierFields(set)}
-        <button type="button" class="os-ghost" data-action="station" data-station="target" ${modifierReady(set) ? "" : "disabled"}>Next: the object</button>
+        <button type="button" class="os-ghost" data-action="station" data-station="target" data-advance="1">Next: the object</button>
       </section>`;
   }
   if (station === "target") {
@@ -1057,7 +1082,7 @@ function stationMarkup(set) {
         <div class="ai-stack">
           <button type="button" class="os-create" data-action="add-signs">Add image</button>
           <button type="button" class="os-ghost" data-action="use-demo">Use the test image</button>
-          <button type="button" class="os-ghost" data-action="station" data-station="place" ${hasTarget(set) ? "" : "disabled"}>Next: place</button>
+          <button type="button" class="os-ghost" data-action="station" data-station="place" data-advance="1">Next: place</button>
         </div>
       </section>`;
   }
@@ -1074,7 +1099,7 @@ function stationMarkup(set) {
             <label>Up <input data-field="shift-y" type="range" min="-0.4" max="0.4" step="0.02" value="${clampShift(current.replacement.shiftY)}"></label>
             <label>Size <input data-field="scale" type="range" min="0.35" max="1.6" step="0.05" value="${clampScale(current.replacement.scale)}"></label>
           </div>` : `<p class="os-hint">Add a photo first.</p>`}
-        <button type="button" class="os-ghost" data-action="station" data-station="publish" ${hasTarget(set) ? "" : "disabled"}>Next: publish</button>
+        <button type="button" class="os-ghost" data-action="station" data-station="publish" data-advance="1">Next: publish</button>
       </section>`;
   }
   const trackingReady = Boolean(set.mindBlob);
@@ -1874,7 +1899,16 @@ async function onClick(event) {
 
   if (action === "station") {
     const next = button.dataset.station;
-    if (!state.draft || !stationReached(state.draft, next)) return;
+    if (!state.draft) return;
+    if (!stationReached(state.draft, next)) {
+      state.error = stationBlock(state.draft, next);
+      render();
+      return;
+    }
+    if (modifierType(state.draft) === "link") {
+      const href = httpUrl(modifierSource(state.draft).href);
+      if (href) setModifier(state.draft, { href });
+    }
     state.station = next;
     state.error = "";
     if (next === "place" || next === "publish") await ensureAR();
@@ -1923,8 +1957,12 @@ function onInput(event) {
       linkLabel: field === "link-label" ? event.target.value.slice(0, 80) : (current.linkLabel || ""),
     });
     queueSave();
-    const next = view.querySelector("[data-station='target']");
-    if (next) next.disabled = !modifierReady(state.draft);
+    paintStations();
+    if (modifierReady(state.draft) && state.error) {
+      state.error = "";
+      const alert = view.querySelector(".ai-error");
+      if (alert) alert.remove();
+    }
     return;
   }
   const target = selectedTarget();
