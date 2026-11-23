@@ -1,8 +1,7 @@
 import { fetchAccountPhoto, forgetAccountSet, listAccountPhotos, saveAccountPhoto } from "./account.js";
 import { deleteSet, listSets, saveSet } from "./db.js";
 import { blobToImage, featureCount, fileToPicture, fileToSign, makeDemoSign, quality } from "./images.js";
-import { shapeGlb } from "./glb.js";
-import { destroyScene, mountAR, mountPreview } from "./stage.js?v=model-on-photo-20261117";
+import { destroyScene, mountAR, mountPreview } from "./stage.js?v=modifiers-20261123";
 
 const SAMPLE = {
   name: "Sample card",
@@ -21,20 +20,19 @@ const MARVINS = {
 };
 const UNTITLED = "Untitled experience";
 
-const PRESETS = [
-  { id: "beacon", name: "Beacon" },
-  { id: "monolith", name: "Monolith" },
-  { id: "orb", name: "Orb" },
-  { id: "portal", name: "Portal" },
-  { id: "lantern", name: "Lantern" },
+const MODIFIERS = [
+  { id: "link", name: "Link" },
+  { id: "animation", name: "Animation" },
+  { id: "model", name: "3D model" },
+  { id: "image", name: "Image overlay" },
 ];
 
 const AFRAME_SRC = "https://aframe.io/releases/1.6.0/aframe.min.js";
 const MINDAR_SRC = "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js";
 
 const LINE = [
-  { id: "glb", label: "GLB" },
-  { id: "target", label: "Target image" },
+  { id: "opens", label: "Opens" },
+  { id: "target", label: "Object" },
   { id: "place", label: "Place" },
   { id: "publish", label: "Publish" },
 ];
@@ -42,7 +40,7 @@ const LINE = [
 const state = {
   view: "library",
   returnView: "library",
-  station: "glb",
+  station: "opens",
   sets: [],
   draft: null,
   selectedId: null,
@@ -54,6 +52,7 @@ const state = {
   sceneReturn: "",
   found: new Set(),
   ready: false,
+  session: null,
 };
 
 const bound = new Map();
@@ -122,15 +121,18 @@ function ago(timestamp) {
 
 function defaultReplacement() {
   return {
-    type: "object",
-    preset: "beacon",
+    type: "link",
+    href: "",
+    linkLabel: "",
     tint: "#ff5a1f",
     plinth: "#1a1612",
-    hideSign: true,
+    hideSign: false,
     scale: 1,
     shiftX: 0,
     shiftY: 0,
     imageBlob: null,
+    animationBlob: null,
+    animationName: "",
     modelBlob: null,
     modelName: "",
   };
@@ -191,7 +193,10 @@ function specFrom(target, link) {
       scale: clampScale(replacement.scale),
       shiftX: clampShift(replacement.shiftX),
       shiftY: clampShift(replacement.shiftY),
+      href: replacement.href || "",
+      linkLabel: replacement.linkLabel || "",
       imageUrl: replacement.imageBlob ? link(replacement.imageBlob) : "",
+      animationUrl: replacement.animationBlob ? link(replacement.animationBlob) : "",
       modelUrl: replacement.modelUrl || (replacement.modelBlob ? link(replacement.modelBlob) : ""),
     },
   };
@@ -391,9 +396,65 @@ function statusLabel(set) {
   return "Offline";
 }
 
-function hasGlb(set) {
-  if (set?.glb?.blob) return true;
-  return (set?.targets || []).some((target) => target.replacement?.type === "model" && target.replacement.modelBlob);
+function httpUrl(value) {
+  try {
+    const url = new URL(String(value || "").trim());
+    if (url.protocol !== "http:" && url.protocol !== "https:") return "";
+    return url.href;
+  } catch (error) {
+    return "";
+  }
+}
+
+function modifierType(set) {
+  const named = set?.modifierType;
+  if (MODIFIERS.some((item) => item.id === named)) return named;
+  const found = (set?.targets || []).find((target) => MODIFIERS.some((item) => item.id === target.replacement?.type));
+  return found ? found.replacement.type : "";
+}
+
+function modifierSource(set) {
+  const target = (set?.targets || []).find((item) => item.replacement) || null;
+  return { ...(target?.replacement || {}), ...(set?.modifier || {}) };
+}
+
+function modifierReady(set) {
+  const type = modifierType(set);
+  const source = modifierSource(set);
+  if (type === "link") return Boolean(httpUrl(source.href));
+  if (type === "animation") return Boolean(source.animationBlob);
+  if (type === "model") return Boolean(source.modelBlob || source.modelUrl || set?.glb?.blob);
+  if (type === "image") return Boolean(source.imageBlob);
+  return false;
+}
+
+function stampModifier(set, target) {
+  const type = modifierType(set);
+  if (!type || !target?.replacement) return;
+  const source = modifierSource(set);
+  target.replacement.type = type;
+  target.replacement.href = source.href || "";
+  target.replacement.linkLabel = source.linkLabel || "";
+  if (source.animationBlob) {
+    target.replacement.animationBlob = source.animationBlob;
+    target.replacement.animationName = source.animationName || "";
+  }
+  if (type === "model") {
+    const blob = set.glb?.blob || source.modelBlob;
+    if (blob) {
+      target.replacement.modelBlob = blob;
+      target.replacement.modelName = set.glb?.name || source.modelName || "";
+    }
+    if (source.modelUrl) target.replacement.modelUrl = source.modelUrl;
+  }
+  if (type === "image" && source.imageBlob) target.replacement.imageBlob = source.imageBlob;
+}
+
+function setModifier(set, patch) {
+  if (!set) return;
+  set.modifier = { ...(set.modifier || {}), ...patch };
+  if (patch.type) set.modifierType = patch.type;
+  (set.targets || []).forEach((target) => stampModifier(set, target));
 }
 
 function hasTarget(set) {
@@ -401,13 +462,13 @@ function hasTarget(set) {
 }
 
 function stationReached(set, id) {
-  if (id === "glb") return true;
-  if (id === "target") return hasGlb(set);
-  return hasGlb(set) && hasTarget(set);
+  if (id === "opens") return true;
+  if (id === "target") return modifierReady(set);
+  return modifierReady(set) && hasTarget(set);
 }
 
 function stationFor(set) {
-  if (!hasGlb(set)) return "glb";
+  if (!modifierReady(set)) return "opens";
   if (!hasTarget(set)) return "target";
   if (set.mindBlob && !set.mindDirty) return "publish";
   return "place";
@@ -416,22 +477,17 @@ function stationFor(set) {
 function rememberGlb(blob, name) {
   if (!state.draft) return;
   state.draft.glb = { blob, name };
-  state.draft.targets.forEach((target) => {
-    target.replacement.type = "model";
-    target.replacement.modelBlob = blob;
-    target.replacement.modelName = name;
-    target.replacement.hideSign = false;
-  });
+  setModifier(state.draft, { type: "model", modelBlob: blob, modelName: name });
 }
 
 function revealOf(set) {
-  if (set.glb?.name) return set.glb.name;
-  const target = set.targets[0];
-  if (!target || !target.replacement) return "No GLB yet";
-  if (target.replacement.type === "model") return target.replacement.modelName || "GLB";
-  if (target.replacement.type === "image") return "Picture";
-  const preset = PRESETS.find((item) => item.id === target.replacement.preset);
-  return preset ? preset.name : "No GLB yet";
+  const type = modifierType(set);
+  const source = modifierSource(set);
+  if (type === "link") return source.linkLabel || source.href || "Link";
+  if (type === "animation") return source.animationName || "Animation";
+  if (type === "model") return source.modelName || set.glb?.name || "3D model";
+  if (type === "image") return "Image overlay";
+  return "Nothing opens yet";
 }
 
 function shortId(id) {
@@ -462,14 +518,14 @@ function allEvents() {
 
 function eventCopy(event) {
   const name = event.name || "Experience";
-  if (event.action === "seen") return `${name} unlocked`;
+  if (event.action === "seen") return `${name} appeared on a screen`;
   if (event.action === "compiled") return `${name} compiled`;
   if (event.action === "created") return `${name} created`;
   return `${name} saved`;
 }
 
 function eventTone(action) {
-  if (action === "seen" || action === "compiled") return "active";
+  if (action === "seen" || action === "impressed" || action === "compiled") return "active";
   if (action === "created" || action === "saved") return "idle";
   return "offline";
 }
@@ -524,11 +580,76 @@ function modelCode(set) {
   return `<div data-afterimage="${set.id}" data-name="${String(set.name || "Experience").replace(/"/g, "")}"></div>\n${url.href}`;
 }
 
-function recordImpression(name) {
-  if (!state.draft) return;
-  state.draft.impressions = Number(state.draft.impressions || 0) + 1;
-  pushEvent(state.draft, "seen");
-  saveSet(state.draft, owner).then(upsert).catch(() => {});
+let measureSave = Promise.resolve();
+
+function kindsOf(set) {
+  const stored = set?.metrics?.kinds || {};
+  return {
+    link: Number(stored.link) || 0,
+    animation: Number(stored.animation) || 0,
+    model: Number(stored.model) || 0,
+    image: Number(stored.image) || 0,
+  };
+}
+
+function ensureMetrics(set) {
+  const metrics = set.metrics && typeof set.metrics === "object" ? set.metrics : {};
+  metrics.kinds = kindsOf(set);
+  set.metrics = metrics;
+  return metrics;
+}
+
+function persistMeasure(set) {
+  measureSave = measureSave
+    .then(() => saveSet(set, owner))
+    .then((saved) => upsert(saved))
+    .catch(() => {});
+}
+
+function plural(count, word) {
+  return `${count} ${word}${count === 1 ? "" : "s"}`;
+}
+
+function metricLine(set) {
+  const kinds = kindsOf(set);
+  return [
+    plural(kinds.link, "link"),
+    plural(kinds.animation, "animation"),
+    plural(kinds.model, "model"),
+    plural(kinds.image, "overlay"),
+  ].join(" · ");
+}
+
+const MEASURE_NOTE = "The tally moves when the camera recognizes the object and that thing appears on the screen. Each kind keeps its own count.";
+
+function beginSession(set) {
+  state.session = set ? { set, seen: new Set() } : null;
+}
+
+function noteReady() {}
+
+function kindOn(set, name) {
+  const target = (set?.targets || []).find((item) => item.name === name);
+  const type = target?.replacement?.type || modifierType(set);
+  return Object.prototype.hasOwnProperty.call(kindsOf(set), type) ? type : "";
+}
+
+function noteFound(name) {
+  const session = state.session;
+  if (!session?.set || session.seen.has(name)) return;
+  session.seen.add(name);
+  const type = kindOn(session.set, name);
+  if (!type) return;
+  const metrics = ensureMetrics(session.set);
+  metrics.kinds[type] += 1;
+  pushEvent(session.set, "seen");
+  persistMeasure(session.set);
+}
+
+function noteLost() {}
+
+function endSession() {
+  state.session = null;
 }
 
 function render() {
@@ -649,6 +770,7 @@ function experienceCard(set) {
       <div class="ox-sample-body">
         <p>Your experience · ${esc(statusLabel(set))}</p>
         <h3>${esc(set.name || "Untitled experience")}</h3>
+        <div class="ox-metrics">${esc(metricLine(set))}</div>
         <div class="ox-sample-actions">
           ${isActive(set) ? `<button type="button" data-action="camera" data-id="${esc(set.id)}">Open camera</button>` : ""}
           <button type="button" data-action="edit" data-id="${esc(set.id)}">Edit</button>
@@ -711,7 +833,7 @@ function renderLibrary() {
           <article class="ox-guide">
             <div>
               <h2>What can you do with Horseradish?</h2>
-              <p>A picture, a model, and a camera. The model sits on the picture.</p>
+              <p>Point a camera at the object. What it opens is impressed on the screen, and the tally moves.</p>
               <button type="button" class="ox-play" data-action="new-set">Start</button>
             </div>
             <img src="${esc(MARVINS.signUrl)}" alt="Marvin's sign, the picture the camera recognizes">
@@ -721,16 +843,16 @@ function renderLibrary() {
           <h2 class="ox-block-title">Studio steps</h2>
           <div class="ox-steps">
             <button type="button" data-action="new-set">
-              <span>Model</span>
-              <small>Start with a .glb, or pick a shape.</small>
+              <span>Opens</span>
+              <small>A link, an animation, a 3D model, or an image overlay.</small>
             </button>
             <button type="button" data-action="new-set">
-              <span>Picture</span>
+              <span>Object</span>
               <small>Add the photo the camera should recognize.</small>
             </button>
             <button type="button" data-action="new-set">
               <span>Place</span>
-              <small>Sit the model on the photo.</small>
+              <small>Sit what it opens on the object.</small>
             </button>
             <button type="button" data-action="new-set">
               <span>Publish</span>
@@ -746,6 +868,7 @@ function renderLibrary() {
           </div>
           <button type="button" class="ox-outline" data-action="new-set">New scene</button>
         </div>
+        <p class="ox-measure-note">${MEASURE_NOTE}</p>
         ${shown.length
           ? `<div class="ox-samples">${shown.map(experienceCard).join("")}</div>`
           : `<p class="ox-empty">${searching ? "No experiences match that search." : "No experiences yet."}</p>`}
@@ -834,57 +957,55 @@ function renderLogs() {
     <div class="os-head">
       <div>
         <h1>Logs</h1>
-        <p>When an experience was created, published, and unlocked by a camera.</p>
+        <p>When an experience was created, compiled, and appeared on a screen.</p>
       </div>
     </div>
     ${state.error ? `<p class="ai-error" role="alert">${esc(state.error)}</p>` : ""}
     <ul class="os-panel os-activity">${activityList()}</ul>`;
 }
 
-function editorPanel(target) {
-  const replacement = target.replacement;
-  const presetChips = PRESETS.map((preset) => `
-    <button type="button" class="os-ghost" data-action="preset" data-preset="${preset.id}" aria-pressed="${replacement.preset === preset.id}">${preset.name}</button>
-  `).join("");
-  const report = quality(target.featureCount);
-  const picture = replacement.imageBlob
-    ? `<img class="ai-mini" src="${esc(urlFor(replacement.imageBlob))}" alt="">`
-    : `<span class="os-hint">No picture yet</span>`;
-  const model = replacement.modelName
-    ? `<span class="os-hint">${esc(replacement.modelName)}</span>`
-    : `<span class="os-hint">No model yet</span>`;
-
-  return `
-    <div class="os-panel ai-panel">
-      <p class="os-field-label">Add content</p>
-      <div class="ai-panel-head">
-        <label class="ai-name grow">
-          <span class="os-field-label">Name</span>
-          <input data-field="target-name" value="${esc(target.name)}" maxlength="60">
-        </label>
-        <button type="button" class="os-ghost" data-action="show-sign">Show image</button>
-        <button type="button" class="os-ghost os-delete" data-action="remove-target">Remove</button>
-      </div>
-      ${report ? `<p class="ai-quality ${report.tone}"><strong>${report.label}.</strong> ${esc(report.hint)}</p>` : `<p class="os-hint">Publish to score how well this image will track.</p>`}
-      <div class="ai-switch" role="group" aria-label="Add content">
-        <button type="button" class="os-ghost" data-action="type" data-type="object" aria-pressed="${replacement.type === "object"}">3D object</button>
-        <button type="button" class="os-ghost" data-action="type" data-type="image" aria-pressed="${replacement.type === "image"}">Different picture</button>
-        <button type="button" class="os-ghost" data-action="type" data-type="model" aria-pressed="${replacement.type === "model"}">Your 3D file</button>
-      </div>
-      ${replacement.type === "object" ? `<div class="ai-chips" role="group" aria-label="Object">${presetChips}</div>` : ""}
-      ${replacement.type === "image" ? `<div class="ai-actions">${picture}<button type="button" class="os-ghost" data-action="pick-image">Choose picture</button></div>` : ""}
-      ${replacement.type === "model" ? `<div class="ai-actions">${model}<button type="button" class="os-ghost" data-action="pick-model">Choose .glb</button></div>` : ""}
-      <div class="ai-controls">
-        <label>Size <input data-field="scale" type="range" min="0.35" max="1.6" step="0.05" value="${clampScale(replacement.scale)}"></label>
-        <label>Color <input data-field="tint" type="color" value="${hex(replacement.tint, "#ff5a1f")}"></label>
-        <label>Cover <input data-field="plinth" type="color" value="${hex(replacement.plinth, "#1a1612")}"></label>
-        ${replacement.type === "object" || replacement.type === "model" ? `<label class="ai-check"><input data-field="hide" type="checkbox" ${replacement.hideSign ? "checked" : ""}> Hide the target image</label>` : ""}
-      </div>
-    </div>`;
+function modifierFields(set) {
+  const type = modifierType(set);
+  const source = modifierSource(set);
+  if (type === "link") {
+    return `
+      <label class="ai-name">
+        <span class="os-field-label">Link</span>
+        <input data-field="href" type="url" inputmode="url" placeholder="https://" value="${esc(source.href || "")}" autocomplete="off">
+      </label>
+      <label class="ai-name">
+        <span class="os-field-label">Label</span>
+        <input data-field="link-label" value="${esc(source.linkLabel || "")}" maxlength="80" placeholder="Download" autocomplete="off">
+      </label>`;
+  }
+  if (type === "animation") {
+    return `
+      <div class="ai-stack">
+        <button type="button" class="os-create" data-action="pick-animation">${source.animationName ? "Replace animation" : "Upload animation"}</button>
+        ${source.animationName ? `<p class="os-hint">${esc(source.animationName)}</p>` : `<p class="os-hint">Use an mp4 or webm.</p>`}
+      </div>`;
+  }
+  if (type === "model") {
+    const name = set.glb?.name || source.modelName || "";
+    return `
+      <div class="ai-stack">
+        <button type="button" class="os-create" data-action="pick-model">${name ? "Replace .glb" : "Upload .glb"}</button>
+        ${name ? `<p class="os-hint">${esc(name)}</p>` : ""}
+      </div>`;
+  }
+  if (type === "image") {
+    const picture = source.imageBlob ? `<img class="ai-mini" src="${esc(urlFor(source.imageBlob))}" alt="">` : "";
+    return `
+      <div class="ai-actions">
+        ${picture || `<span class="os-hint">No overlay yet</span>`}
+        <button type="button" class="os-ghost" data-action="pick-image">${source.imageBlob ? "Replace overlay" : "Choose overlay"}</button>
+      </div>`;
+  }
+  return "";
 }
 
 function lineMarkup(set) {
-  const station = LINE.some((item) => item.id === state.station) ? state.station : "glb";
+  const station = LINE.some((item) => item.id === state.station) ? state.station : "opens";
   return `
     <ol class="ai-line">
       ${LINE.map((item, index) => {
@@ -901,24 +1022,21 @@ function lineMarkup(set) {
 }
 
 function stationMarkup(set) {
-  const station = LINE.some((item) => item.id === state.station) ? state.station : "glb";
+  const station = LINE.some((item) => item.id === state.station) ? state.station : "opens";
   const current = selectedTarget();
-  const glbName = set.glb?.name || current?.replacement?.modelName || "";
-  if (station === "glb") {
-    const shapes = PRESETS.map((preset) => `
-      <button type="button" class="os-ghost" data-action="shape" data-preset="${preset.id}">${preset.name}</button>
+  const chosen = modifierType(set);
+  if (station === "opens") {
+    const choices = MODIFIERS.map((item) => `
+      <button type="button" class="os-ghost" data-action="modifier" data-type="${item.id}" aria-pressed="${chosen === item.id}">${item.name}</button>
     `).join("");
     return `
       <section class="os-panel ai-station">
-        <p class="os-kicker">1 · GLB</p>
-        <h2>Start with the model.</h2>
-        <p>Upload a .glb, or pick a shape. This is what the camera puts on your photo.</p>
-        ${glbName ? `<p class="os-hint">Using ${esc(glbName)}.</p>` : ""}
-        <div class="ai-stack">
-          <button type="button" class="os-create" data-action="pick-model">Upload .glb</button>
-        </div>
-        <div class="ai-chips" role="group" aria-label="Shapes">${shapes}</div>
-        <button type="button" class="os-ghost" data-action="station" data-station="target" ${hasGlb(set) ? "" : "disabled"}>Next: target image</button>
+        <p class="os-kicker">1 · Opens</p>
+        <h2>What does the object open?</h2>
+        <p>A link, an animation, a 3D model, or an image overlay. The tally counts when it is impressed on a screen.</p>
+        <div class="ai-chips" role="group" aria-label="What it opens">${choices}</div>
+        ${modifierFields(set)}
+        <button type="button" class="os-ghost" data-action="station" data-station="target" ${modifierReady(set) ? "" : "disabled"}>Next: the object</button>
       </section>`;
   }
   if (station === "target") {
@@ -933,8 +1051,8 @@ function stationMarkup(set) {
     return `
       <section class="os-panel ai-station">
         <p class="os-kicker">2 · Target image</p>
-        <h2>Add the photo the camera should recognize.</h2>
-        <p>Use a clear picture of the sign, card, or page. The same photo is saved to your account.</p>
+        <h2>Add the object the camera should recognize.</h2>
+        <p>Use a clear picture of the portrait, sign, or thing. The same photo is saved to your account.</p>
         <div class="ai-sign-list" id="ai-sign-list">${signs || `<p class="os-hint">No photo yet.</p>`}</div>
         <div class="ai-stack">
           <button type="button" class="os-create" data-action="add-signs">Add image</button>
@@ -947,7 +1065,7 @@ function stationMarkup(set) {
     return `
       <section class="ai-station">
         <p class="os-kicker">3 · Place</p>
-        <h2>Sit the model on the photo.</h2>
+        <h2>Sit it on the object.</h2>
         <p>Slide it across the photo and set the size until it sits where you want it.</p>
         <div class="ai-preview" id="ai-preview"></div>
         ${current ? `
@@ -991,9 +1109,11 @@ function renderEditor() {
       <div>
         <p class="os-kicker">Experience</p>
         <h1>Create experience</h1>
+        <div class="ox-metrics">${esc(metricLine(set))}</div>
       </div>
       <button type="button" class="os-ghost" data-action="back-library">Back</button>
     </div>
+    <p class="ox-measure-note">${MEASURE_NOTE}</p>
     <label class="ai-name">
       <span class="os-field-label">Name</span>
       <input data-field="set-name" value="${esc(set.name)}" maxlength="60" autocomplete="off">
@@ -1171,7 +1291,23 @@ function setHud(text, locked) {
   hudStatus.classList.toggle("is-locked", locked);
 }
 
-async function launch(mindUrl, specs) {
+function showOpenLink(specs) {
+  const open = document.getElementById("ai-hud-open");
+  if (!open) return;
+  const found = (specs || []).find((spec) => state.found.has(spec.name) && spec.replacement?.type === "link" && httpUrl(spec.replacement.href));
+  if (!found) {
+    open.hidden = true;
+    open.removeAttribute("href");
+    return;
+  }
+  open.hidden = false;
+  open.href = httpUrl(found.replacement.href);
+  open.textContent = found.replacement.linkLabel || "Open link";
+}
+
+async function launch(mindUrl, specs, set) {
+  endSession();
+  beginSession(set);
   state.view = "stage";
   state.found = new Set();
   document.body.classList.add("ai-live");
@@ -1184,13 +1320,16 @@ async function launch(mindUrl, specs) {
     mindUrl,
     specs,
     onFound: (name) => {
-      if (!state.found.has(name)) recordImpression(name);
       state.found.add(name);
+      noteFound(name);
+      showOpenLink(specs);
       setHud([...state.found].join(" · "), true);
-      document.getElementById("ai-hud-hint").textContent = "Keep the picture in view. Move slowly to explore the reveal.";
+      document.getElementById("ai-hud-hint").textContent = "Keep the object in view. The tally moves while it stays on screen.";
     },
     onLost: (name) => {
       state.found.delete(name);
+      noteLost(name);
+      showOpenLink(specs);
       if (state.found.size === 0) {
         setHud("Looking for a known sign", false);
         document.getElementById("ai-hud-hint").textContent = "Fill the frame with the sign and hold it steady.";
@@ -1199,6 +1338,7 @@ async function launch(mindUrl, specs) {
       }
     },
     onReady: () => {
+      noteReady();
       if (state.found.size === 0) setHud("Looking for a known sign", false);
     },
     onError: () => {
@@ -1209,6 +1349,8 @@ async function launch(mindUrl, specs) {
 }
 
 function exitStage() {
+  endSession();
+  showOpenLink([]);
   destroyScene(stage);
   releaseStageUrls();
   stage.hidden = true;
@@ -1240,7 +1382,7 @@ async function openCameraFor(set, sample = false) {
     return;
   }
   const mindUrl = set.mindUrl || freshUrl(set.mindBlob);
-  await launch(mindUrl, set.targets.map((target) => specFrom(target, freshUrl)));
+  await launch(mindUrl, set.targets.map((target) => specFrom(target, freshUrl)), set);
 }
 
 function isImageFile(file) {
@@ -1265,7 +1407,7 @@ async function addFiles(fileList) {
     };
     state.draft.targets.push(target);
     state.selectedId = target.id;
-    if (state.draft.glb?.blob) rememberGlb(state.draft.glb.blob, state.draft.glb.name);
+    stampModifier(state.draft, target);
   }
   state.draft.mindDirty = true;
   state.draft.mindBlob = null;
@@ -1343,9 +1485,9 @@ async function placeDemo() {
     featureCount: null,
     replacement: {
       ...defaultReplacement(),
-      preset: "lantern",
-      tint: "#f6c56b",
-      plinth: "#140e09",
+      type: "link",
+      href: new URL("index.html", location.href).href,
+      linkLabel: "First Light",
     },
   };
   const set = {
@@ -1355,6 +1497,7 @@ async function placeDemo() {
     updated: Date.now(),
     mindDirty: false,
     mindBlob: await tracking.blob(),
+    modifierType: "link",
     targets: [target],
     impressions: 0,
     owner,
@@ -1497,7 +1640,7 @@ async function onClick(event) {
   if (action === "edit") {
     state.draft = state.sets.find((set) => set.id === id) || null;
     state.selectedId = state.draft?.targets[0]?.id || null;
-    state.station = state.draft ? stationFor(state.draft) : "glb";
+    state.station = state.draft ? stationFor(state.draft) : "opens";
     state.error = "";
     state.view = "editor";
     if (state.station === "place" || state.station === "publish") await ensureAR();
@@ -1739,11 +1882,10 @@ async function onClick(event) {
     return;
   }
 
-  if (action === "shape") {
-    const preset = PRESETS.find((item) => item.id === button.dataset.preset);
-    if (!preset || !state.draft) return;
-    rememberGlb(shapeGlb(preset.id, "#ff5a1f"), preset.name);
-    state.station = "target";
+  if (action === "modifier") {
+    const type = button.dataset.type;
+    if (!state.draft || !MODIFIERS.some((item) => item.id === type)) return;
+    setModifier(state.draft, { type });
     state.error = "";
     await saveSet(state.draft, owner);
     upsert(state.draft);
@@ -1751,6 +1893,10 @@ async function onClick(event) {
     return;
   }
 
+  if (action === "pick-animation") {
+    document.getElementById("ai-rep-animation")?.click();
+    return;
+  }
   if (action === "pick-image") document.getElementById("ai-rep-image").click();
   if (action === "pick-model") document.getElementById("ai-rep-model").click();
 }
@@ -1767,6 +1913,18 @@ function onInput(event) {
   if (field === "set-name") {
     state.draft.name = event.target.value.slice(0, 60);
     queueSave();
+    return;
+  }
+  if (field === "href" || field === "link-label") {
+    const current = modifierSource(state.draft);
+    setModifier(state.draft, {
+      type: "link",
+      href: field === "href" ? event.target.value.trim() : (current.href || ""),
+      linkLabel: field === "link-label" ? event.target.value.slice(0, 80) : (current.linkLabel || ""),
+    });
+    queueSave();
+    const next = view.querySelector("[data-station='target']");
+    if (next) next.disabled = !modifierReady(state.draft);
     return;
   }
   const target = selectedTarget();
@@ -1808,13 +1966,10 @@ function accountOwner() {
 }
 
 const HOME_LOOKS = {
-  beacon: { type: "object", preset: "beacon", name: "Beacon", tint: "#ff5a1f", plinth: "#1a1612" },
-  monolith: { type: "object", preset: "monolith", name: "Monolith", tint: "#ff5a1f", plinth: "#1a1612" },
-  orb: { type: "object", preset: "orb", name: "Orb", tint: "#ff5a1f", plinth: "#1a1612" },
-  portal: { type: "object", preset: "portal", name: "Portal", tint: "#ff5a1f", plinth: "#1a1612" },
-  lantern: { type: "object", preset: "lantern", name: "Lantern", tint: "#f6c56b", plinth: "#140e09" },
-  picture: { type: "image", name: "Picture", tint: "#ff5a1f", plinth: "#1a1612" },
-  model: { type: "model", name: "Your model", tint: "#ff5a1f", plinth: "#1a1612" },
+  picture: { type: "image", name: "Image overlay" },
+  model: { type: "model", name: "3D model" },
+  link: { type: "link", name: "Link" },
+  animation: { type: "animation", name: "Animation" },
 };
 
 function takeHomeEntry() {
@@ -1840,7 +1995,7 @@ async function startBlank() {
     owner,
   };
   state.selectedId = null;
-  state.station = "glb";
+  state.station = "opens";
   state.error = "";
   state.view = "editor";
 }
@@ -1852,10 +2007,7 @@ async function startFromLook(look) {
   const replacement = {
     ...defaultReplacement(),
     type: look.type,
-    tint: look.tint,
-    plinth: look.plinth,
   };
-  if (look.preset) replacement.preset = look.preset;
   const target = {
     id: crypto.randomUUID(),
     name: "Test sign",
@@ -1871,6 +2023,7 @@ async function startFromLook(look) {
     updated: Date.now(),
     mindDirty: true,
     mindBlob: null,
+    modifierType: look.type,
     targets: [target],
     owner,
   };
@@ -1879,6 +2032,7 @@ async function startFromLook(look) {
   upsert(set);
   state.draft = set;
   state.selectedId = target.id;
+  state.station = modifierReady(set) ? "target" : "opens";
   state.error = "";
   state.view = "editor";
   hideBusy();
@@ -2006,7 +2160,7 @@ async function createScene() {
   set.targets.push(target);
   state.draft = set;
   state.selectedId = target.id;
-  state.station = "glb";
+  state.station = "opens";
   state.error = "";
   pushEvent(set, "created");
   showBusy("Saving the photo to your account…", null);
@@ -2107,6 +2261,10 @@ if (view) {
       document.getElementById("ai-rep-image")?.click();
       return;
     }
+    if (action === "pick-animation") {
+      document.getElementById("ai-rep-animation")?.click();
+      return;
+    }
     if (action === "pick-model") {
       document.getElementById("ai-rep-model")?.click();
       return;
@@ -2191,11 +2349,9 @@ document.getElementById("ai-sign-files")?.addEventListener("change", (event) => 
 document.getElementById("ai-rep-image")?.addEventListener("change", (event) => {
   const file = event.target.files?.[0];
   event.target.value = "";
-  const target = selectedTarget();
-  if (!file || !target) return;
+  if (!file || !state.draft) return;
   fileToPicture(file).then((image) => {
-    target.replacement.imageBlob = image.blob;
-    target.replacement.type = "image";
+    setModifier(state.draft, { type: "image", imageBlob: image.blob });
     state.error = "";
     queueSave();
     render();
@@ -2220,10 +2376,29 @@ document.getElementById("ai-rep-model")?.addEventListener("change", (event) => {
       return;
     }
     rememberGlb(new Blob([bytes], { type: "model/gltf-binary" }), name);
-    state.station = "target";
+    state.station = modifierReady(state.draft) && hasTarget(state.draft) ? state.station : "opens";
     state.error = "";
     return saveSet(state.draft, owner).then(upsert).then(() => render());
   }).catch(fail);
+});
+
+document.getElementById("ai-rep-animation")?.addEventListener("change", (event) => {
+  const file = event.target.files?.[0];
+  event.target.value = "";
+  if (!file || !state.draft) return;
+  const name = file.name || "animation.mp4";
+  const video = file.type === "video/mp4" || file.type === "video/webm" || /\.(mp4|webm)$/i.test(name);
+  if (!video) {
+    fail(new Error("Use an mp4 or webm animation."));
+    return;
+  }
+  if (file.size > 40_000_000) {
+    fail(new Error("That animation is over 40 MB. Export a smaller file."));
+    return;
+  }
+  setModifier(state.draft, { type: "animation", animationBlob: file, animationName: name });
+  state.error = "";
+  saveSet(state.draft, owner).then(upsert).then(() => render()).catch(fail);
 });
 
 window.HorseradishAfterImage = { open, home, logs, search, projects };

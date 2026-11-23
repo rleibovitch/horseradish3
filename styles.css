@@ -3099,7 +3099,7 @@ body.ai-live { overflow: hidden; }
 #ai-stage { position: fixed; inset: 0; z-index: 80; overflow: hidden; background: #111827; }
 #ai-stage a-scene { position: absolute !important; inset: 0; width: 100%; height: 100%; }
 #ai-hud { position: fixed; inset: 0; z-index: 90; pointer-events: none; }
-#ai-hud-status, #ai-hud-hint, #ai-hud-exit { pointer-events: auto; }
+#ai-hud-status, #ai-hud-hint, #ai-hud-exit, #ai-hud-open { pointer-events: auto; }
 #ai-hud-status {
     width: fit-content;
     max-width: calc(100% - 32px);
@@ -3111,6 +3111,20 @@ body.ai-live { overflow: hidden; }
 }
 #ai-hud-status.is-locked { background: #bef264; color: #172000; font-weight: 600; }
 #ai-hud-hint { margin: 0.6rem auto 0; width: fit-content; max-width: min(28rem, calc(100% - 32px)); text-align: center; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+#ai-hud-open {
+    position: absolute;
+    left: 50%;
+    bottom: calc(max(22px, env(safe-area-inset-bottom)) + 3.4rem);
+    transform: translateX(-50%);
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    background: #181a1b;
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    text-decoration: none;
+}
+#ai-hud-open[hidden] { display: none !important; }
 #ai-hud-exit {
     position: absolute;
     left: 50%;
@@ -3301,6 +3315,26 @@ body.home-lab .home-create {
     cursor: pointer;
 }
 
+body.home-lab .home-name {
+    font-family: var(--display);
+    font-size: clamp(1.4rem, 2vw, 1.8rem);
+    line-height: 1;
+    letter-spacing: -0.03em;
+}
+
+body.home-lab h1.home-title {
+    flex: 0 1 auto;
+    justify-content: flex-start;
+    max-width: 12ch;
+    font-size: clamp(3.4rem, 8vw, 7.2rem);
+    line-height: 0.92;
+    letter-spacing: -0.04em;
+}
+
+body.home-lab h1.home-title span {
+    white-space: normal;
+}
+
 body.home-lab .home-eyebrow {
     font-family: "IBM Plex Mono", var(--mono);
     font-size: 0.78rem;
@@ -3335,6 +3369,13 @@ body.home-lab h1 span {
         justify-content: space-between;
         font-size: min(14cqh, 4.4cqw);
     }
+
+    body.home-lab h1.home-title {
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        font-size: clamp(3.6rem, 6.4vw, 7.2rem);
+    }
 }
 
 body.home-lab .home-lede {
@@ -3350,6 +3391,28 @@ body.home-lab .home-actions {
     flex-wrap: wrap;
     gap: 0.75rem;
     margin-top: 1.75rem;
+}
+
+body.home-lab .home-metric {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    max-width: 40rem;
+    margin-top: 1.35rem;
+}
+
+body.home-lab .home-metric span {
+    display: inline-block;
+    padding: 0.28rem 0.45rem 0.34rem;
+    background: #14120f;
+    color: #f6f1e8;
+    font-size: clamp(1rem, 1.7vw, 1.25rem);
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+body.home-lab .home-metric span:last-child {
+    background: #c55700;
 }
 
 body.home-lab .home-demo {
@@ -3954,7 +4017,11 @@ body.home-lab .footer a {
     align-items: flex-end;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 0.9rem;
+    margin-bottom: 0.45rem;
+}
+
+.ox-section-head > div {
+    min-width: 0;
 }
 
 .ox-block-title {
@@ -4004,7 +4071,26 @@ body.home-lab .footer a {
 
 .os-app .ox-sample h3 {
     font-size: 1rem;
-    margin: 0 0 0.55rem;
+    margin: 0 0 0.35rem;
+}
+
+.ox-metrics {
+    margin: 0 0 0.7rem;
+    color: #181a1b;
+    font-size: 0.92rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.ox-measure-note {
+    margin: 0 0 0.9rem;
+    max-width: 42rem;
+    color: #5c6370;
+    font-size: 0.9rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    line-height: 1.45;
 }
 
 .ox-sample-actions {
