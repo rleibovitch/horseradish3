@@ -222,6 +222,10 @@
                     drop[shareKey(incoming.wasShare)] = true;
                 }
                 delete incoming.wasShare;
+                delete incoming.agentKey;
+                delete incoming.apiKey;
+                delete incoming.sealedKey;
+                delete incoming.openaiKey;
                 const ref = firebase.firestore().collection("lab").doc(user.uid);
                 let savedHost = incoming;
                 return ref.get().then(function (snap) {
@@ -339,7 +343,12 @@
                     if (shareKey(host.share) !== key) {
                         return host;
                     }
-                    found = Object.assign({}, host, fields || {});
+                    const nextFields = Object.assign({}, fields || {});
+                    delete nextFields.agentKey;
+                    delete nextFields.apiKey;
+                    delete nextFields.sealedKey;
+                    delete nextFields.openaiKey;
+                    found = Object.assign({}, host, nextFields);
                     return found;
                 });
                 if (!found) {

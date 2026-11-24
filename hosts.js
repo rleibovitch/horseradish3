@@ -19,6 +19,10 @@
     let saving = false;
     let pendingPiece = "";
     let speaker = null;
+    let keyDraft = "";
+    let logoDraft = "";
+    let door = null;
+    let doorBusy = "";
 
     function esc(value) {
         return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
@@ -37,7 +41,7 @@
     }
 
     function diningRoom() {
-        return {
+        return withAgent({
             name: "Dining room",
             specialty: "Questions about the menu. Orders, or the kitchen.",
             libraryName: "Menus",
@@ -72,11 +76,23 @@
             ],
             asks: [],
             dirty: true
-        };
+        });
+    }
+
+    function withAgent(host) {
+        host.agentProvider = host.agentProvider === "custom" ? "custom" : "openai";
+        host.agentModel = host.agentModel || "gpt-4o-mini";
+        host.agentEndpoint = host.agentEndpoint || "";
+        host.agentWelcome = host.agentWelcome || "";
+        host.agentMay = host.agentMay || "";
+        host.agentMayNot = host.agentMayNot || "";
+        host.agentColor = /^#[0-9a-fA-F]{6}$/.test(host.agentColor || "") ? host.agentColor : "#0092a2";
+        host.doorSlug = String(host.doorSlug || "").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 32);
+        return host;
     }
 
     function blankHost() {
-        return {
+        return withAgent({
             name: "",
             specialty: "Questions about the menu. Orders, or the kitchen.",
             libraryName: "Menus",
@@ -89,7 +105,7 @@
             pieces: [{ id: pieceId(), title: "Menu", text: "" }],
             asks: [],
             dirty: true
-        };
+        });
     }
 
     function clone(host) {
@@ -104,6 +120,45 @@
             return "ElevenLabs";
         }
         return "Voice ready to connect";
+    }
+
+    function doorLine(host) {
+        return host.doorSlug ? " · Live" : "";
+    }
+
+    function publicDoor(slug) {
+        return location.origin + "/h/" + slug;
+    }
+
+    function scanDoor(slug) {
+        return location.origin + "/talk.html?h=" + encodeURIComponent(slug) + "&from=qr";
+    }
+
+    function embedDoor(slug, name) {
+        const src = location.origin + "/talk.html?h=" + encodeURIComponent(slug);
+        const title = String(name || "Host").replace(/"/g, "");
+        return '<iframe src="' + src + '" title="' + title + '" style="width:100%;max-width:420px;height:640px;border:0;border-radius:28px"></iframe>';
+    }
+
+    function money(micro) {
+        const dollars = Number(micro || 0) / 1000000;
+        if (dollars < 0.01) {
+            return "$" + dollars.toFixed(4);
+        }
+        return "$" + dollars.toFixed(2);
+    }
+
+    function spent(ms) {
+        const sec = Math.round(Number(ms || 0) / 1000);
+        if (sec < 90) {
+            return sec + "s";
+        }
+        return Math.round(sec / 60) + " min";
+    }
+
+    function logoSrc() {
+        const raw = logoDraft || (door && door.logo) || "";
+        return /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/i.test(raw) ? raw : "";
     }
 
     function pieceLine(host) {
@@ -245,6 +300,14 @@
             voiceSource: draft.voiceSource === "plan" ? "plan" : "key",
             voiceId: String(draft.voiceId || "").replace(/[^A-Za-z0-9]/g, "").slice(0, 40),
             elevenKey: String(draft.elevenKey || "").trim().slice(0, 200),
+            doorSlug: String(draft.doorSlug || "").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 32),
+            agentProvider: draft.agentProvider === "custom" ? "custom" : "openai",
+            agentModel: String(draft.agentModel || "gpt-4o-mini").slice(0, 40),
+            agentEndpoint: String(draft.agentEndpoint || "").trim().slice(0, 300),
+            agentWelcome: String(draft.agentWelcome || "").slice(0, 280),
+            agentMay: String(draft.agentMay || "").slice(0, 400),
+            agentMayNot: String(draft.agentMayNot || "").slice(0, 400),
+            agentColor: /^#[0-9a-fA-F]{6}$/.test(draft.agentColor || "") ? draft.agentColor : "#0092a2",
             pieces: (draft.pieces || []).slice(0, 8).map(function (piece) {
                 return {
                     id: piece.id || pieceId(),
@@ -600,7 +663,7 @@
                 <p class="hx-kicker">${esc(host.libraryName || "One library")}</p>
                 <h2>${esc(host.name || "Unnamed Host")}</h2>
                 <p>${esc(pieceLine(host))}</p>
-                <p class="hx-meta">${esc(voiceLabel(host))}</p>
+                <p class="hx-meta">${esc(voiceLabel(host) + doorLine(host))}</p>
                 <button type="button" class="hx-go" data-action="open" data-share="${share}">Open</button>
             </article>`;
     }
@@ -612,12 +675,11 @@
         const showHolding = holding && holding.dirty && matches(holding);
         root.innerHTML = `
             <div class="hx">
-                <p class="hx-kicker">Hosts</p>
+                <p class="hx-kicker">HOST by Horseradish</p>
                 <div class="hx-hero-row">
-                    <h1>A host knows <span class="hx-block">one library.</span></h1>
+                    <h1>Your agent. <span class="hx-block">Their phone.</span></h1>
                     <button type="button" class="hx-go hx-go-lg" data-action="new">New host</button>
                 </div>
-                <p class="hx-lead">Upload the menu. The host answers from it, places the order, or sends the ticket to the kitchen.</p>
                 <p class="hx-note" role="status">${esc(notice)}</p>
                 <div class="hx-grid">
                     ${showHolding ? `
@@ -644,6 +706,81 @@
             </div>`;
     }
 
+    function connectMarkup() {
+        const provider = draft.agentProvider === "custom" ? "custom" : "openai";
+        const live = door && door.ok && door.published && door.slug;
+        const mark = logoSrc();
+        const busy = doorBusy ? "disabled" : "";
+        return `
+            <section class="hx-connect">
+                <h2>Connect your agent</h2>
+                <div class="hx-choices">
+                    <label class="hx-choice">
+                        <input type="radio" name="agent" value="openai" ${provider === "openai" ? "checked" : ""}>
+                        <span>OpenAI</span>
+                    </label>
+                    <label class="hx-choice">
+                        <input type="radio" name="agent" value="custom" ${provider === "custom" ? "checked" : ""}>
+                        <span>Custom endpoint</span>
+                    </label>
+                </div>
+                <label class="hx-label" for="hx-slug">Link</label>
+                <input id="hx-slug" class="hx-field" data-field="doorSlug" value="${esc(draft.doorSlug || "")}" maxlength="32" placeholder="acme" autocomplete="off" spellcheck="false">
+                ${provider === "custom" ? `
+                    <label class="hx-label" for="hx-endpoint">Endpoint</label>
+                    <input id="hx-endpoint" class="hx-field" data-field="agentEndpoint" type="url" value="${esc(draft.agentEndpoint || "")}" maxlength="300" placeholder="https://agent.example.com/talk" autocomplete="off" spellcheck="false">
+                ` : `
+                    <label class="hx-label" for="hx-model">Model</label>
+                    <input id="hx-model" class="hx-field" data-field="agentModel" value="${esc(draft.agentModel || "gpt-4o-mini")}" maxlength="40" autocomplete="off" spellcheck="false">
+                `}
+                <label class="hx-label" for="hx-agent-key">API key</label>
+                <input id="hx-agent-key" class="hx-field" data-field="agentKey" type="password" value="${esc(keyDraft)}" maxlength="200" placeholder="${door && door.keySet ? "Saved" : ""}" autocomplete="off" spellcheck="false">
+                <label class="hx-label" for="hx-welcome">Welcome</label>
+                <input id="hx-welcome" class="hx-field" data-field="agentWelcome" value="${esc(draft.agentWelcome || "")}" maxlength="280" placeholder="Ask us anything" autocomplete="off">
+                <label class="hx-label" for="hx-may">Allowed</label>
+                <textarea id="hx-may" class="hx-area" data-field="agentMay" rows="2" maxlength="400" placeholder="Questions about the shop">${esc(draft.agentMay || "")}</textarea>
+                <label class="hx-label" for="hx-may-not">Blocked</label>
+                <textarea id="hx-may-not" class="hx-area" data-field="agentMayNot" rows="2" maxlength="400" placeholder="Payments and private accounts">${esc(draft.agentMayNot || "")}</textarea>
+                <div class="hx-brand-row">
+                    <label class="hx-label" for="hx-color">Color</label>
+                    <input id="hx-color" class="hx-color" data-field="agentColor" type="color" value="${esc(draft.agentColor || "#0092a2")}">
+                    <button type="button" class="hx-ghost" data-action="logo">Logo</button>
+                    ${mark ? `<img class="hx-logo" src="${esc(mark)}" alt="">` : ""}
+                </div>
+                <div class="hx-actions">
+                    <button type="button" class="hx-go" data-action="test-agent" ${busy}>Test</button>
+                    <button type="button" class="hx-go" data-action="publish-agent" ${busy}>Publish</button>
+                    ${live && door.enabled ? `<button type="button" class="hx-ghost" data-action="close-door" ${busy}>Turn off</button>` : ""}
+                </div>
+                ${door && door.reply ? `<article class="hx-answer"><p>${esc(door.reply)}</p></article>` : ""}
+                ${live ? `
+                    <div class="hx-metrics">
+                        <p class="hx-metric"><b>${esc(door.scans || 0)}</b><span>Scans</span></p>
+                        <p class="hx-metric"><b>${esc(door.talks || 0)}</b><span>Conversations</span></p>
+                        <p class="hx-metric"><b>${esc(door.sessions || 0)}</b><span>Sessions</span></p>
+                        <p class="hx-metric"><b>${esc((door.textTurns || 0) + " / " + (door.voiceTurns || 0))}</b><span>Text / voice</span></p>
+                        <p class="hx-metric"><b>${esc(spent(door.durationMs))}</b><span>Time</span></p>
+                        <p class="hx-metric"><b>${esc(door.calls || 0)}</b><span>API calls</span></p>
+                        <p class="hx-metric"><b>${esc(money(door.microUsd))}</b><span>Cost</span></p>
+                        <p class="hx-metric"><b>${esc(door.conversions || 0)}</b><span>Conversions</span></p>
+                    </div>
+                    ${(door.faq || []).length ? `<ul class="hx-asks">${door.faq.map(function (item) {
+                        return `<li><span>${esc(item.n)}</span> ${esc(item.q)}</li>`;
+                    }).join("")}</ul>` : ""}
+                    <p class="hx-kicker">${door.enabled ? "Live" : "Off"}</p>
+                    <p class="hx-door-url">${esc(publicDoor(door.slug))}</p>
+                    <div class="hx-qr-row">
+                        <div id="hx-qr" class="hx-qr"></div>
+                        <div class="hx-actions">
+                            <button type="button" class="hx-ghost" data-action="download-qr">Download QR</button>
+                            <button type="button" class="hx-ghost" data-action="copy-link">Copy link</button>
+                            <button type="button" class="hx-ghost" data-action="copy-embed">Copy embed</button>
+                        </div>
+                    </div>
+                ` : ""}
+            </section>`;
+    }
+
     function renderEditor() {
         const pieces = draft.pieces || [];
         const plan = draft.voiceSource === "plan";
@@ -651,8 +788,9 @@
         root.innerHTML = `
             <div class="hx">
                 <button type="button" class="hx-ghost" data-action="back">All hosts</button>
-                <p class="hx-kicker">${esc(draft.libraryName || "Library")}</p>
+                <p class="hx-kicker">HOST by Horseradish</p>
                 <input class="hx-name" data-field="name" value="${esc(draft.name || "")}" placeholder="Name the host" maxlength="40" autocomplete="off">
+                ${connectMarkup()}
                 <div class="hx-split">
                     <section class="hx-library">
                         <div class="hx-library-head">
@@ -747,22 +885,38 @@
             </div>`;
     }
 
+    function paintQr() {
+        const box = document.getElementById("hx-qr");
+        if (!box || !door || !door.slug || typeof qrcode !== "function") {
+            return;
+        }
+        const code = qrcode(0, "M");
+        code.addData(scanDoor(door.slug));
+        code.make();
+        box.innerHTML = code.createSvgTag({ cellSize: 4, margin: 2 });
+    }
+
     function render() {
         if (mode === "editor" && draft) {
             renderEditor();
+            paintQr();
             return;
         }
         renderList();
     }
 
     function edit(next) {
-        draft = next;
+        draft = withAgent(next);
         mode = "editor";
         last = null;
         question = "";
         ticket = [];
         notice = "";
+        keyDraft = "";
+        logoDraft = "";
+        door = null;
         render();
+        loadDoor();
     }
 
     function findPiece(id) {
@@ -778,6 +932,10 @@
         }
         const field = el.getAttribute("data-field");
         if (!field) {
+            return;
+        }
+        if (field === "agentKey") {
+            keyDraft = el.value;
             return;
         }
         draft.dirty = true;
@@ -798,7 +956,16 @@
 
     function onChange(event) {
         const el = event.target;
-        if (!draft || !el || el.name !== "voice") {
+        if (!draft || !el) {
+            return;
+        }
+        if (el.name === "agent") {
+            draft.agentProvider = el.value === "custom" ? "custom" : "openai";
+            draft.dirty = true;
+            render();
+            return;
+        }
+        if (el.name !== "voice") {
             return;
         }
         draft.voiceSource = el.value === "plan" ? "plan" : "key";
@@ -939,13 +1106,251 @@
         }
         if (action === "to-kitchen") {
             toKitchen();
+            return;
         }
+        if (action === "logo") {
+            if (logoInput) {
+                logoInput.click();
+            }
+            return;
+        }
+        if (action === "test-agent") {
+            postAgent("test");
+            return;
+        }
+        if (action === "publish-agent") {
+            postAgent("publish");
+            return;
+        }
+        if (action === "close-door") {
+            postAgent("disable");
+            return;
+        }
+        if (action === "download-qr") {
+            downloadQr();
+            return;
+        }
+        if (action === "copy-link" && door && door.slug) {
+            copyValue(scanDoor(door.slug).replace("&from=qr", ""), "Link copied.");
+            return;
+        }
+        if (action === "copy-embed" && door && door.slug) {
+            copyValue(embedDoor(door.slug, draft && draft.name), "Embed copied.");
+        }
+    }
+
+    function copyValue(value, note) {
+        const done = function () {
+            notice = note;
+            render();
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(value).then(done).catch(function () {
+                notice = value;
+                render();
+            });
+            return;
+        }
+        notice = value;
+        render();
+    }
+
+    function downloadQr() {
+        const svg = document.querySelector("#hx-qr svg");
+        if (!svg || !door || !door.slug) {
+            return;
+        }
+        const blob = new Blob([svg.outerHTML], { type: "image/svg+xml" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = door.slug + "-host.svg";
+        link.click();
+        setTimeout(function () {
+            URL.revokeObjectURL(link.href);
+        }, 1000);
+    }
+
+    function loadDoor() {
+        if (!draft) {
+            return;
+        }
+        const slug = draft.doorSlug || "";
+        const share = draft.share || "";
+        if (!slug && !share) {
+            door = null;
+            return;
+        }
+        fetch("/api/host-agent", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ action: "status", slug: slug, share: share })
+        }).then(function (res) {
+            return res.json();
+        }).then(function (data) {
+            if (!draft) {
+                return;
+            }
+            door = data || null;
+            if (data && data.slug && !draft.doorSlug) {
+                draft.doorSlug = data.slug;
+            }
+            if (data && data.endpoint && !draft.agentEndpoint) {
+                draft.agentEndpoint = data.endpoint;
+            }
+            if (data && data.provider) {
+                draft.agentProvider = data.provider === "custom" ? "custom" : "openai";
+            }
+            render();
+        }).catch(function () {});
+    }
+
+    function agentBody(action) {
+        ensureShare();
+        return {
+            action: action,
+            name: String(draft.name || "").trim(),
+            slug: String(draft.doorSlug || "").trim() || String(draft.name || ""),
+            share: draft.share || "",
+            provider: draft.agentProvider === "custom" ? "custom" : "openai",
+            model: draft.agentModel || "gpt-4o-mini",
+            endpoint: draft.agentEndpoint || "",
+            apiKey: keyDraft,
+            welcome: draft.agentWelcome || "",
+            may: draft.agentMay || "",
+            mayNot: draft.agentMayNot || "",
+            color: draft.agentColor || "#0092a2",
+            logo: logoDraft,
+            pieces: draft.pieces || [],
+            message: "Hello. What can you help me with?"
+        };
+    }
+
+    function applyDoor(data) {
+        door = data;
+        if (!draft) {
+            return Promise.resolve();
+        }
+        if (data && data.slug) {
+            draft.doorSlug = data.slug;
+        }
+        if (data && data.provider) {
+            draft.agentProvider = data.provider === "custom" ? "custom" : "openai";
+        }
+        if (data && data.model) {
+            draft.agentModel = data.model;
+        }
+        if (data && data.endpoint) {
+            draft.agentEndpoint = data.endpoint;
+        }
+        keyDraft = "";
+        const fields = {
+            doorSlug: draft.doorSlug || "",
+            agentProvider: draft.agentProvider,
+            agentModel: draft.agentModel || "",
+            agentEndpoint: draft.agentEndpoint || "",
+            agentWelcome: draft.agentWelcome || "",
+            agentMay: draft.agentMay || "",
+            agentMayNot: draft.agentMayNot || "",
+            agentColor: draft.agentColor || "#0092a2"
+        };
+        const known = hosts.some(function (host) {
+            return String(host.share || "").toUpperCase() === String(draft.share || "").toUpperCase();
+        });
+        if (!known || !draft.share || !Lab.patchHost) {
+            return Promise.resolve();
+        }
+        return Lab.patchHost(draft.share, fields).then(function (result) {
+            if (result && result.ok && result.host) {
+                const reply = data && data.reply;
+                draft = Object.assign(withAgent(clone(result.host)), { dirty: false });
+                if (reply) {
+                    door.reply = reply;
+                }
+                remember(result.host);
+            }
+        }).catch(function () {});
+    }
+
+    function postAgent(action) {
+        if (!draft || doorBusy) {
+            return;
+        }
+        if (action !== "disable" && !String(draft.name || "").trim()) {
+            notice = "Name the host.";
+            render();
+            return;
+        }
+        doorBusy = action;
+        notice = action === "test" ? "Testing the connection." : (action === "disable" ? "Closing the door." : "Publishing the door.");
+        render();
+        const body = action === "disable"
+            ? { action: "disable", slug: draft.doorSlug || "", share: draft.share || "" }
+            : agentBody(action);
+        fetch("/api/host-agent", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(body)
+        }).then(function (res) {
+            return res.text().then(function (raw) {
+                let data = {};
+                try {
+                    data = JSON.parse(raw);
+                } catch (err) {
+                    data = { ok: false, message: "The door could not be saved." };
+                }
+                return data;
+            });
+        }).then(function (data) {
+            doorBusy = "";
+            if (!data || data.ok === false) {
+                notice = (data && data.message) || "The door could not be saved.";
+                render();
+                return;
+            }
+            notice = action === "test" ? "The connection answered." : (action === "disable" ? "The door is closed." : "The door is open.");
+            logoDraft = "";
+            applyDoor(data).then(function () {
+                render();
+            });
+        }).catch(function () {
+            doorBusy = "";
+            notice = "The door could not be saved.";
+            render();
+        });
     }
 
     root.addEventListener("input", onInput);
     root.addEventListener("change", onChange);
     root.addEventListener("submit", onSubmit);
     root.addEventListener("click", onClick);
+
+    const logoInput = document.createElement("input");
+    logoInput.type = "file";
+    logoInput.accept = "image/png,image/jpeg,image/webp,image/gif";
+    logoInput.hidden = true;
+    document.body.appendChild(logoInput);
+    logoInput.addEventListener("change", function () {
+        const file = logoInput.files && logoInput.files[0];
+        logoInput.value = "";
+        if (!file || !draft) {
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function () {
+            const src = String(reader.result || "");
+            if (src.length > 70000 || !/^data:image\/(png|jpeg|webp|gif);base64,/i.test(src)) {
+                notice = "Use a smaller PNG, JPEG, or WebP logo.";
+                render();
+                return;
+            }
+            logoDraft = src;
+            notice = "Logo ready. Publish to put it on the door.";
+            render();
+        };
+        reader.readAsDataURL(file);
+    });
 
     if (fileInput) {
         fileInput.addEventListener("change", function () {

@@ -2,6 +2,9 @@
   "redirects": [
     { "source": "/lib/:path*", "destination": "/", "permanent": false }
   ],
+  "rewrites": [
+    { "source": "/h/:slug", "destination": "/talk.html?h=:slug" }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",

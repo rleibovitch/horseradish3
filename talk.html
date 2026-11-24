@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HOST by Horseradish</title>
+    <meta name="description" content="Your agent. Their phone. Instant connection.">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="talk.css?v=host-agent-20261124">
+</head>
+<body>
+    <main id="door">
+        <p class="kicker">HOST by Horseradish</p>
+        <h1><span id="who">Host</span></h1>
+        <p id="welcome" class="welcome"></p>
+        <div id="logo-wrap" class="logo-wrap" hidden>
+            <img id="logo" alt="">
+        </div>
+        <ol id="thread" class="thread" aria-live="polite"></ol>
+        <p id="status" class="status" role="status">Opening the door.</p>
+        <form id="talk">
+            <label class="off" for="say">Message</label>
+            <input id="say" maxlength="800" autocomplete="off" placeholder="Ask the host" enterkeyhint="send">
+            <div class="row">
+                <button type="submit" id="send">Send</button>
+                <button type="button" id="mic" aria-pressed="false">Speak</button>
+            </div>
+        </form>
+        <p class="foot">Your agent. Their phone. Instant connection.</p>
+    </main>
+    <script src="talk.js?v=host-agent-20261124"></script>
+</body>
+</html>

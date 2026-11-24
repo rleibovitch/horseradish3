@@ -5179,6 +5179,8 @@ body.home-lab .footer a {
 .hx-field:focus,
 .hx-piece-title:focus,
 .hx-piece-text:focus,
+.hx-area:focus,
+.hx-color:focus,
 .hx-ask input:focus,
 .hx-go:focus,
 .hx-ghost:focus {
@@ -5202,5 +5204,105 @@ body.home-lab .footer a {
 
     .os-app .hx h1 {
         font-size: 2.7rem;
+    }
+}
+
+.hx-connect {
+    margin: 1.1rem 0 1.3rem;
+    padding: 1rem 1rem 1.15rem;
+    background: #fffdf8;
+    border: 3px solid #1a1a2e;
+    box-shadow: 8px 8px 0 #0092a2;
+}
+
+.os-app .hx-connect h2 {
+    margin: 0 0 0.35rem;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+}
+
+.hx-area {
+    display: block;
+    width: 100%;
+    margin: 0.35rem 0 0.8rem;
+    padding: 0.7rem 0.75rem;
+    font: inherit;
+    color: #1a1a2e;
+    background: #fffdf8;
+    border: 3px solid #1a1a2e;
+    resize: vertical;
+}
+
+.hx-brand-row,
+.hx-qr-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.7rem;
+    margin-top: 0.8rem;
+}
+
+.hx-color {
+    width: 3.2rem;
+    height: 2.6rem;
+    padding: 0;
+    border: 3px solid #1a1a2e;
+    background: transparent;
+    cursor: pointer;
+}
+
+.hx-logo {
+    width: 3rem;
+    height: 3rem;
+    object-fit: cover;
+    border: 3px solid #1a1a2e;
+}
+
+.hx-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.55rem;
+    margin-top: 1rem;
+}
+
+.hx-metric {
+    margin: 0;
+    padding: 0.65rem 0.7rem;
+    background: #1a1a2e;
+    color: #f5f0e8;
+}
+
+.hx-metric b {
+    display: block;
+    font-family: "Archivo Black", "Space Grotesk", sans-serif;
+    font-size: 1.25rem;
+    font-weight: 400;
+}
+
+.hx-metric span,
+.hx-door-url {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.hx-door-url {
+    margin: 0.2rem 0;
+    font-size: 0.95rem;
+    text-transform: none;
+    letter-spacing: 0;
+    word-break: break-all;
+}
+
+.hx-qr svg {
+    width: 168px;
+    height: 168px;
+    background: #fff;
+    border: 3px solid #1a1a2e;
+}
+
+@media (max-width: 900px) {
+    .hx-metrics {
+        grid-template-columns: 1fr 1fr;
     }
 }
