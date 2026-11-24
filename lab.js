@@ -699,6 +699,9 @@
         document.querySelectorAll("[data-os-jump]").forEach(function (btn) {
             btn.classList.remove("is-on");
         });
+        if (search) {
+            search.placeholder = name === "hosts" ? "Search hosts" : "Search experiences";
+        }
         closeRail();
     }
 
@@ -1008,6 +1011,12 @@
                 return;
             }
             showView(name);
+            if (name === "hosts") {
+                if (window.HorseradishHosts) {
+                    window.HorseradishHosts.open();
+                }
+                return;
+            }
             if (!window.HorseradishAfterImage) {
                 return;
             }
@@ -1025,7 +1034,15 @@
 
     if (search) {
         search.addEventListener("input", function () {
-            if (!window.HorseradishAfterImage || !floor || floor.hidden) {
+            if (!floor || floor.hidden) {
+                return;
+            }
+            const hostsOn = document.querySelector("[data-os-view='hosts'].is-on");
+            if (hostsOn && window.HorseradishHosts) {
+                window.HorseradishHosts.search(search.value);
+                return;
+            }
+            if (!window.HorseradishAfterImage) {
                 return;
             }
             window.HorseradishAfterImage.search(search.value);

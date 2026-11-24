@@ -8,10 +8,10 @@
     <meta name="description" content="Create an experience. Add a target image, add the content, and publish it.">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="shortcut icon" type="image/png" href="favicon.png">
-    <link rel="stylesheet" href="styles.css?v=reflect-piece-20261124">
+    <link rel="stylesheet" href="styles.css?v=hosts-order-20261124">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="os-body">
@@ -31,6 +31,10 @@
                 <button type="button" class="os-nav-btn is-on" data-os-view="models">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z" fill="currentColor"/></svg>
                     Explore
+                </button>
+                <button type="button" class="os-nav-btn" data-os-view="hosts">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17h16M6 17a6 6 0 0 1 12 0M12 7V4M10 4h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    Hosts
                 </button>
                 <button type="button" class="os-nav-btn" data-os-view="logs">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v14H5V5zm3 4h8M8 12h8M8 15h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -79,6 +83,11 @@
                 <div class="os-floor" id="lab-floor" hidden>
                     <section class="os-view" data-view="studio">
                         <div id="ai-view"></div>
+                    </section>
+
+                    <section class="os-view" data-view="hosts" hidden>
+                        <div id="hosts-root"></div>
+                        <input id="hosts-file" class="os-file" type="file" accept=".txt,.md,.csv,.json,text/plain">
                     </section>
 
                     <section class="os-view" data-view="settings" hidden>
@@ -140,7 +149,8 @@
     <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
     <script src="lab-auth.js?v=afterimage-wonder-20261116"></script>
-    <script src="lab.js?v=onirix-projects-20261119"></script>
+    <script src="lab.js?v=hosts-library-20261124"></script>
+    <script src="hosts.js?v=hosts-order-20261124"></script>
     <script type="module" src="afterimage/studio.js?v=reflect-norest-20261124"></script>
 </body>
 </html>

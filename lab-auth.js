@@ -196,7 +196,10 @@
             inbox: host.inbox,
             site: host.site || "",
             phone: host.phone || "",
-            webhook: host.webhook || ""
+            webhook: host.webhook || "",
+            managerPhone: host.managerPhone || "",
+            libraryName: host.libraryName || "",
+            voiceSource: host.voiceSource || ""
         }).catch(function () {});
     }
 
@@ -220,6 +223,7 @@
                 }
                 delete incoming.wasShare;
                 const ref = firebase.firestore().collection("lab").doc(user.uid);
+                let savedHost = incoming;
                 return ref.get().then(function (snap) {
                     const data = snap.exists ? snap.data() : {};
                     const hosts = Array.isArray(data.hosts) ? data.hosts : [];
@@ -229,24 +233,26 @@
                     });
                     const now = new Date().toISOString();
                     const again = Boolean(existing);
-                    incoming.savedAt = now;
-                    incoming.builtAt = (existing && existing.builtAt) || now;
-                    incoming.deployedAt = now;
-                    incoming.inbox = incoming.inbox || (existing && existing.inbox) || makeInbox();
-                    incoming.phone = incoming.phone || (existing && existing.phone) || "";
-                    incoming.webhook = incoming.webhook || (existing && existing.webhook) || "";
+                    savedHost = Object.assign({}, existing || {}, incoming);
+                    delete savedHost.wasShare;
+                    savedHost.savedAt = now;
+                    savedHost.builtAt = (existing && existing.builtAt) || now;
+                    savedHost.deployedAt = now;
+                    savedHost.inbox = savedHost.inbox || makeInbox();
+                    savedHost.phone = incoming.phone || (existing && existing.phone) || "";
+                    savedHost.webhook = incoming.webhook || (existing && existing.webhook) || "";
                     if (again) {
-                        incoming.rebuiltAt = now;
-                        incoming.redeployedAt = now;
+                        savedHost.rebuiltAt = now;
+                        savedHost.redeployedAt = now;
                     }
                     const next = hosts.filter(function (item) {
                         return !drop[shareKey(item.share)];
                     });
-                    next.unshift(incoming);
+                    next.unshift(savedHost);
                     const entry = {
                         at: now,
-                        share: incoming.share,
-                        name: incoming.name || "Unnamed Host"
+                        share: savedHost.share,
+                        name: savedHost.name || "Unnamed Host"
                     };
                     if (again) {
                         logs.unshift(Object.assign({ action: "redeployed" }, entry));
@@ -258,10 +264,10 @@
                         hosts: next.slice(0, 24),
                         logs: logs.slice(0, 80)
                     }).then(function () {
-                        return publishHost(incoming);
+                        return publishHost(savedHost);
                     });
                 }).then(function () {
-                    return { ok: true, host: incoming };
+                    return { ok: true, host: savedHost };
                 }).catch(function (err) {
                     return { ok: false, message: firebaseMiss(err) };
                 });
