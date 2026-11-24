@@ -226,9 +226,30 @@ function buildContent(parent, assets, spec, index) {
     return;
   }
 
+  if (replacement.type === "reflect") {
+    const scale = replacement.scale || 1;
+    const pieces = Array.isArray(replacement.catalogPieces) ? replacement.catalogPieces : [];
+    const first = pieces.find((piece) => piece?.url)?.url || (replacement.catalogUrls || [])[0] || "";
+    const picture = addImage(assets, `reflect-${index}`, first);
+    if (picture) {
+      addPhotoPlane(parent, picture, scale, aspect * scale, `${shiftX} ${shiftY} 0.02`);
+    } else {
+      parent.append(
+        el("a-text", {
+          value: "Upload the catalog",
+          align: "center",
+          color: "#f6f1e8",
+          width: "1.5",
+          position: "0 0 0.04",
+        }),
+      );
+    }
+    return;
+  }
+
   parent.append(
     el("a-text", {
-      value: "Choose a link, an animation, a model, or an overlay.",
+      value: "Choose a link, an animation, a model, an overlay, or a Reflect.",
       align: "center",
       color: "#f6f1e8",
       width: "1.4",

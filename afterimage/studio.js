@@ -1,7 +1,7 @@
 import { fetchAccountPhoto, forgetAccountSet, listAccountPhotos, saveAccountPhoto } from "./account.js";
 import { deleteSet, listSets, saveSet } from "./db.js";
 import { blobToImage, featureCount, fileToPicture, fileToSign, makeDemoSign, quality } from "./images.js";
-import { destroyScene, mountAR, mountPreview } from "./stage.js?v=modifiers-20261123";
+import { destroyScene, mountAR, mountPreview } from "./stage.js?v=reflect-piece-20261124";
 
 const SAMPLE = {
   name: "Sample card",
@@ -25,7 +25,10 @@ const MODIFIERS = [
   { id: "animation", name: "Animation" },
   { id: "model", name: "3D model" },
   { id: "image", name: "Image overlay" },
+  { id: "reflect", name: "Reflect" },
 ];
+
+const REFLECT_LIMIT = 12;
 
 const AFRAME_SRC = "https://aframe.io/releases/1.6.0/aframe.min.js";
 const MINDAR_SRC = "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js";
@@ -195,6 +198,11 @@ function specFrom(target, link) {
       shiftY: clampShift(replacement.shiftY),
       href: replacement.href || "",
       linkLabel: replacement.linkLabel || "",
+      catalogPieces: catalogItems(replacement).map((item) => ({
+        url: link(item.blob),
+        href: item.href || "",
+      })),
+      catalogUrls: catalogItems(replacement).map((item) => link(item.blob)).filter(Boolean),
       imageUrl: replacement.imageBlob ? link(replacement.imageBlob) : "",
       animationUrl: replacement.animationBlob ? link(replacement.animationBlob) : "",
       modelUrl: replacement.modelUrl || (replacement.modelBlob ? link(replacement.modelBlob) : ""),
@@ -351,7 +359,10 @@ async function absorbAccountPhotos() {
 function queueSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    if (!state.draft || (!state.draft.targets.length && !state.draft.glb?.blob)) return;
+    if (!state.draft) return;
+    const modifier = state.draft.modifier || {};
+    const hasCatalog = catalogItems(modifier).length > 0;
+    if (!state.draft.targets.length && !state.draft.glb?.blob && !hasCatalog && !modifier.href) return;
     saveSet(state.draft, owner).then(upsert).catch((error) => {
       state.error = message(error);
       render();
@@ -422,6 +433,20 @@ function modifierSource(set) {
   return { ...(target?.replacement || {}), ...(set?.modifier || {}) };
 }
 
+function catalogItems(source) {
+  if (!source || typeof source !== "object") return [];
+  if (Array.isArray(source.catalog)) {
+    return source.catalog.map((item) => {
+      if (item instanceof Blob) return { blob: item, href: "" };
+      return { blob: item?.blob || null, href: String(item?.href || "") };
+    }).filter((item) => item.blob);
+  }
+  if (Array.isArray(source.catalogBlobs)) {
+    return source.catalogBlobs.filter((blob) => blob).map((blob) => ({ blob, href: "" }));
+  }
+  return [];
+}
+
 function modifierReady(set) {
   const type = modifierType(set);
   const source = modifierSource(set);
@@ -429,6 +454,7 @@ function modifierReady(set) {
   if (type === "animation") return Boolean(source.animationBlob);
   if (type === "model") return Boolean(source.modelBlob || source.modelUrl || set?.glb?.blob);
   if (type === "image") return Boolean(source.imageBlob);
+  if (type === "reflect") return catalogItems(source).length > 0;
   return false;
 }
 
@@ -452,6 +478,12 @@ function stampModifier(set, target) {
     if (source.modelUrl) target.replacement.modelUrl = source.modelUrl;
   }
   if (type === "image" && source.imageBlob) target.replacement.imageBlob = source.imageBlob;
+  if (type === "reflect") {
+    target.replacement.href = "";
+    const items = catalogItems(source);
+    target.replacement.catalog = items;
+    target.replacement.catalogBlobs = items.map((item) => item.blob);
+  }
 }
 
 function setModifier(set, patch) {
@@ -485,6 +517,7 @@ function stationBlock(set, id) {
     if (type === "animation") return "Upload the animation, then continue.";
     if (type === "model") return "Upload the .glb, then continue.";
     if (type === "image") return "Choose the overlay, then continue.";
+    if (type === "reflect") return "Upload the catalog pictures, then continue.";
     return "Choose what the object opens, then continue.";
   }
   if (id !== "target" && !hasTarget(set)) return "Add a photo of the object, then continue.";
@@ -512,6 +545,10 @@ function revealOf(set) {
   if (type === "animation") return source.animationName || "Animation";
   if (type === "model") return source.modelName || set.glb?.name || "3D model";
   if (type === "image") return "Image overlay";
+  if (type === "reflect") {
+    const count = catalogItems(source).length;
+    return count ? `${count} in the fitting room` : "Reflect";
+  }
   return "Nothing opens yet";
 }
 
@@ -614,6 +651,7 @@ function kindsOf(set) {
     animation: Number(stored.animation) || 0,
     model: Number(stored.model) || 0,
     image: Number(stored.image) || 0,
+    reflect: Number(stored.reflect) || 0,
   };
 }
 
@@ -642,6 +680,7 @@ function metricLine(set) {
     plural(kinds.animation, "animation"),
     plural(kinds.model, "model"),
     plural(kinds.image, "overlay"),
+    plural(kinds.reflect, "reflect"),
   ].join(" · ");
 }
 
@@ -1026,6 +1065,28 @@ function modifierFields(set) {
         <button type="button" class="os-ghost" data-action="pick-image">${source.imageBlob ? "Replace overlay" : "Choose overlay"}</button>
       </div>`;
   }
+  if (type === "reflect") {
+    const pictures = catalogItems(source);
+    const thumbs = pictures.map((item, index) => `
+      <figure class="ai-reflect-pic">
+        <img src="${esc(urlFor(item.blob))}" alt="">
+        <label class="ai-name">
+          <span class="os-field-label">This piece</span>
+          <input data-field="piece-href" data-index="${index}" type="text" inputmode="url" placeholder="https:// or this piece" value="${esc(item.href || "")}" autocomplete="off">
+        </label>
+        <button type="button" data-action="drop-reflect" data-index="${index}">Remove</button>
+      </figure>`).join("");
+    return `
+      <div class="ai-stack">
+        <button type="button" class="os-create" data-action="pick-reflect">${pictures.length ? "Add catalog pictures" : "Upload catalog pictures"}</button>
+        <p class="os-hint">${pictures.length ? `${pictures.length} of ${REFLECT_LIMIT}. Swipe these on the phone. A piece can open its own page.` : "Upload pictures from the catalog. People swipe them on their phone."}</p>
+        ${thumbs ? `<div class="ai-reflect-row">${thumbs}</div>` : ""}
+      </div>
+      <label class="ai-name">
+        <span class="os-field-label">Label</span>
+        <input data-field="link-label" value="${esc(source.linkLabel || "")}" maxlength="80" placeholder="Take this" autocomplete="off">
+      </label>`;
+  }
   return "";
 }
 
@@ -1058,7 +1119,7 @@ function stationMarkup(set) {
       <section class="os-panel ai-station">
         <p class="os-kicker">1 · Opens</p>
         <h2>What does the object open?</h2>
-        <p>A link, an animation, a 3D model, or an image overlay. The tally counts when it is impressed on a screen.</p>
+        <p>A link, an animation, a 3D model, an image overlay, or a Reflect. The tally counts when it appears on a screen.</p>
         <div class="ai-chips" role="group" aria-label="What it opens">${choices}</div>
         ${modifierFields(set)}
         <button type="button" class="os-ghost" data-action="station" data-station="target" data-advance="1">Next: the object</button>
@@ -1077,7 +1138,7 @@ function stationMarkup(set) {
       <section class="os-panel ai-station">
         <p class="os-kicker">2 · Target image</p>
         <h2>Add the object the camera should recognize.</h2>
-        <p>Use a clear picture of the portrait, sign, or thing. The same photo is saved to your account.</p>
+        <p>${chosen === "reflect" ? "Photograph the mirror, the tag, or the dress. That picture is what the camera recognizes. The same photo is saved to your account." : "Use a clear picture of the portrait, sign, or thing. The same photo is saved to your account."}</p>
         <div class="ai-sign-list" id="ai-sign-list">${signs || `<p class="os-hint">No photo yet.</p>`}</div>
         <div class="ai-stack">
           <button type="button" class="os-create" data-action="add-signs">Add image</button>
@@ -1091,7 +1152,7 @@ function stationMarkup(set) {
       <section class="ai-station">
         <p class="os-kicker">3 · Place</p>
         <h2>Sit it on the object.</h2>
-        <p>Slide it across the photo and set the size until it sits where you want it.</p>
+        <p>${modifierType(set) === "reflect" ? "The first picture sits on the object. On the camera, people swipe the catalog and take the page for the piece in front of them." : "Slide it across the photo and set the size until it sits where you want it."}</p>
         <div class="ai-preview" id="ai-preview"></div>
         ${current ? `
           <div class="ai-controls">
@@ -1330,11 +1391,60 @@ function showOpenLink(specs) {
   open.textContent = found.replacement.linkLabel || "Open link";
 }
 
+function reflectPieces(spec) {
+  const listed = spec?.replacement?.catalogPieces;
+  if (Array.isArray(listed) && listed.length) {
+    return listed.filter((piece) => piece && piece.url);
+  }
+  return (spec?.replacement?.catalogUrls || []).filter(Boolean).map((url) => ({ url, href: "" }));
+}
+
+function reflectSpec(specs) {
+  return (specs || []).find((spec) => state.found.has(spec.name) && spec.replacement?.type === "reflect" && reflectPieces(spec).length);
+}
+
+function paintReflect(specs) {
+  const box = document.getElementById("ai-hud-reflect");
+  const photo = document.getElementById("ai-hud-reflect-photo");
+  const count = document.getElementById("ai-hud-reflect-count");
+  const take = document.getElementById("ai-hud-reflect-take");
+  const spec = reflectSpec(specs);
+  if (!box || !photo || !count || !take || !spec) {
+    if (box) box.hidden = true;
+    return;
+  }
+  const pieces = reflectPieces(spec);
+  state.reflectAt = ((state.reflectAt || 0) % pieces.length + pieces.length) % pieces.length;
+  const piece = pieces[state.reflectAt];
+  box.hidden = false;
+  photo.src = piece.url;
+  photo.alt = `Catalog picture ${state.reflectAt + 1} of ${pieces.length}`;
+  count.textContent = `${state.reflectAt + 1} of ${pieces.length}`;
+  const href = httpUrl(piece.href);
+  take.hidden = !href;
+  if (href) {
+    take.href = href;
+    take.textContent = spec.replacement.linkLabel || "Take this";
+  } else {
+    take.removeAttribute("href");
+  }
+}
+
+function stepReflect(direction) {
+  const spec = reflectSpec(state.liveSpecs);
+  const pieces = reflectPieces(spec);
+  if (pieces.length < 2) return;
+  state.reflectAt = ((state.reflectAt || 0) + direction + pieces.length) % pieces.length;
+  paintReflect(state.liveSpecs);
+}
+
 async function launch(mindUrl, specs, set) {
   endSession();
   beginSession(set);
   state.view = "stage";
   state.found = new Set();
+  state.liveSpecs = specs;
+  state.reflectAt = 0;
   document.body.classList.add("ai-live");
   stage.hidden = false;
   hud.hidden = false;
@@ -1347,14 +1457,20 @@ async function launch(mindUrl, specs, set) {
     onFound: (name) => {
       state.found.add(name);
       noteFound(name);
+      const found = specs.find((spec) => spec.name === name);
+      if (found?.replacement?.type === "reflect") state.reflectAt = 0;
       showOpenLink(specs);
+      paintReflect(specs);
       setHud([...state.found].join(" · "), true);
-      document.getElementById("ai-hud-hint").textContent = "Keep the object in view. The tally moves while it stays on screen.";
+      document.getElementById("ai-hud-hint").textContent = found?.replacement?.type === "reflect"
+        ? "Swipe the catalog. Take the one you want."
+        : "Keep the object in view. The tally moves while it stays on screen.";
     },
     onLost: (name) => {
       state.found.delete(name);
       noteLost(name);
       showOpenLink(specs);
+      paintReflect(specs);
       if (state.found.size === 0) {
         setHud("Looking for a known sign", false);
         document.getElementById("ai-hud-hint").textContent = "Fill the frame with the sign and hold it steady.";
@@ -1376,6 +1492,9 @@ async function launch(mindUrl, specs, set) {
 function exitStage() {
   endSession();
   showOpenLink([]);
+  paintReflect([]);
+  state.liveSpecs = null;
+  state.reflectAt = 0;
   destroyScene(stage);
   releaseStageUrls();
   stage.hidden = true;
@@ -1551,6 +1670,7 @@ async function addDemo() {
   };
   state.draft.targets.push(target);
   state.selectedId = target.id;
+  stampModifier(state.draft, target);
   state.draft.mindDirty = true;
   state.draft.mindBlob = null;
   pushEvent(state.draft, "created");
@@ -1794,7 +1914,7 @@ async function onClick(event) {
     return;
   }
 
-  if (action === "add-signs" || action === "pick-image" || action === "pick-model") return;
+  if (action === "add-signs" || action === "pick-image" || action === "pick-model" || action === "pick-reflect") return;
 
   if (action === "use-demo") {
     await addDemo();
@@ -1909,9 +2029,29 @@ async function onClick(event) {
       const href = httpUrl(modifierSource(state.draft).href);
       if (href) setModifier(state.draft, { href });
     }
+    if (modifierType(state.draft) === "reflect") {
+      const catalog = catalogItems(modifierSource(state.draft)).map((item) => ({
+        blob: item.blob,
+        href: httpUrl(item.href),
+      }));
+      setModifier(state.draft, { type: "reflect", href: "", catalog });
+    }
     state.station = next;
     state.error = "";
     if (next === "place" || next === "publish") await ensureAR();
+    render();
+    return;
+  }
+
+  if (action === "drop-reflect") {
+    if (!state.draft) return;
+    const index = Number(button.dataset.index);
+    const pictures = catalogItems(modifierSource(state.draft));
+    if (!Number.isInteger(index) || index < 0 || index >= pictures.length) return;
+    pictures.splice(index, 1);
+    setModifier(state.draft, { type: "reflect", href: "", catalog: pictures });
+    state.error = "";
+    queueSave();
     render();
     return;
   }
@@ -1949,11 +2089,22 @@ function onInput(event) {
     queueSave();
     return;
   }
+  if (field === "piece-href") {
+    const index = Number(event.target.dataset.index);
+    const items = catalogItems(modifierSource(state.draft));
+    if (!Number.isInteger(index) || !items[index]) return;
+    items[index] = { blob: items[index].blob, href: event.target.value.trim() };
+    setModifier(state.draft, { type: "reflect", href: "", catalog: items });
+    queueSave();
+    paintStations();
+    return;
+  }
   if (field === "href" || field === "link-label") {
     const current = modifierSource(state.draft);
+    const type = modifierType(state.draft) === "reflect" ? "reflect" : "link";
     setModifier(state.draft, {
-      type: "link",
-      href: field === "href" ? event.target.value.trim() : (current.href || ""),
+      type,
+      href: type === "reflect" ? "" : (field === "href" ? event.target.value.trim() : (current.href || "")),
       linkLabel: field === "link-label" ? event.target.value.slice(0, 80) : (current.linkLabel || ""),
     });
     queueSave();
@@ -2307,6 +2458,10 @@ if (view) {
       document.getElementById("ai-rep-model")?.click();
       return;
     }
+    if (action === "pick-reflect") {
+      document.getElementById("ai-rep-reflect")?.click();
+      return;
+    }
     if (action === "scene-upload") {
       document.getElementById("ai-scene-file")?.click();
       return;
@@ -2437,6 +2592,37 @@ document.getElementById("ai-rep-animation")?.addEventListener("change", (event) 
   setModifier(state.draft, { type: "animation", animationBlob: file, animationName: name });
   state.error = "";
   saveSet(state.draft, owner).then(upsert).then(() => render()).catch(fail);
+});
+
+document.getElementById("ai-rep-reflect")?.addEventListener("change", (event) => {
+  const files = [...(event.target.files || [])].filter(isImageFile);
+  event.target.value = "";
+  if (!state.draft) return;
+  if (!files.length) {
+    fail(new Error("Use pictures from the catalog."));
+    return;
+  }
+  if (files.some((file) => file.size > 12_000_000)) {
+    fail(new Error("Each catalog picture needs to be under 12 MB."));
+    return;
+  }
+  const current = catalogItems(modifierSource(state.draft));
+  const next = current.concat(files.map((file) => ({ blob: file, href: "" }))).slice(0, REFLECT_LIMIT);
+  setModifier(state.draft, { type: "reflect", href: "", catalog: next });
+  state.error = next.length < current.length + files.length ? `Reflect holds ${REFLECT_LIMIT} pictures.` : "";
+  saveSet(state.draft, owner).then(upsert).then(() => render()).catch(fail);
+});
+
+document.getElementById("ai-hud-reflect-prev")?.addEventListener("click", () => stepReflect(-1));
+document.getElementById("ai-hud-reflect-next")?.addEventListener("click", () => stepReflect(1));
+let reflectStartX = 0;
+document.getElementById("ai-hud-reflect-photo")?.addEventListener("pointerdown", (event) => {
+  reflectStartX = event.clientX;
+});
+document.getElementById("ai-hud-reflect-photo")?.addEventListener("pointerup", (event) => {
+  const delta = event.clientX - reflectStartX;
+  if (Math.abs(delta) < 36) return;
+  stepReflect(delta < 0 ? 1 : -1);
 });
 
 window.HorseradishAfterImage = { open, home, logs, search, projects };

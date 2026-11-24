@@ -8,7 +8,7 @@
     <meta name="description" content="Create an experience. Add a target image, add the content, and publish it.">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="shortcut icon" type="image/png" href="favicon.png">
-    <link rel="stylesheet" href="styles.css?v=modifiers-20261123">
+    <link rel="stylesheet" href="styles.css?v=reflect-piece-20261124">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -111,6 +111,15 @@
         <p id="ai-hud-status">Looking for a known sign</p>
         <p id="ai-hud-hint">Fill the frame with the sign and hold it steady.</p>
         <a id="ai-hud-open" hidden target="_blank" rel="noopener">Open link</a>
+        <div id="ai-hud-reflect" hidden>
+            <p id="ai-hud-reflect-count"></p>
+            <img id="ai-hud-reflect-photo" alt="">
+            <div id="ai-hud-reflect-row">
+                <button type="button" id="ai-hud-reflect-prev">Previous</button>
+                <button type="button" id="ai-hud-reflect-next">Next</button>
+            </div>
+            <a id="ai-hud-reflect-take" hidden target="_blank" rel="noopener">Take this</a>
+        </div>
         <button type="button" id="ai-hud-exit">Close camera</button>
     </div>
     <div id="ai-busy" hidden>
@@ -124,6 +133,7 @@
     <input id="ai-rep-image" class="os-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp">
     <input id="ai-rep-model" class="os-file" type="file" accept=".glb,model/gltf-binary">
     <input id="ai-rep-animation" class="os-file" type="file" accept="video/mp4,video/webm,.mp4,.webm">
+    <input id="ai-rep-reflect" class="os-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp" multiple>
 
     <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-auth-compat.js"></script>
@@ -131,6 +141,6 @@
     <script src="script.js"></script>
     <script src="lab-auth.js?v=afterimage-wonder-20261116"></script>
     <script src="lab.js?v=onirix-projects-20261119"></script>
-    <script type="module" src="afterimage/studio.js?v=link-next-20261123"></script>
+    <script type="module" src="afterimage/studio.js?v=reflect-norest-20261124"></script>
 </body>
 </html>
