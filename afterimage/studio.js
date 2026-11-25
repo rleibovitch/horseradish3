@@ -860,7 +860,7 @@ function renderLibrary() {
               <p>Explore the basics of the studio.</p>
               <button type="button" class="ox-play" data-action="new-set">Start</button>
             </div>
-            <video src="create.mp4" muted playsinline loop autoplay></video>
+            <video src="attention-portal.mp4?v=phone-20261124" muted playsinline loop autoplay></video>
           </article>
           <div class="ox-hero-side">
             <article class="ox-side">
