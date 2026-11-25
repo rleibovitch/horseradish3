@@ -226,6 +226,8 @@
                 delete incoming.apiKey;
                 delete incoming.sealedKey;
                 delete incoming.openaiKey;
+                delete incoming.twilioToken;
+                delete incoming.sealedTwilio;
                 const ref = firebase.firestore().collection("lab").doc(user.uid);
                 let savedHost = incoming;
                 return ref.get().then(function (snap) {
@@ -348,6 +350,8 @@
                     delete nextFields.apiKey;
                     delete nextFields.sealedKey;
                     delete nextFields.openaiKey;
+                    delete nextFields.twilioToken;
+                    delete nextFields.sealedTwilio;
                     found = Object.assign({}, host, nextFields);
                     return found;
                 });

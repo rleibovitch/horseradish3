@@ -20,6 +20,7 @@
     let pendingPiece = "";
     let speaker = null;
     let keyDraft = "";
+    let twilioDraft = "";
     let logoDraft = "";
     let door = null;
     let doorBusy = "";
@@ -88,6 +89,7 @@
         host.agentMayNot = host.agentMayNot || "";
         host.agentColor = /^#[0-9a-fA-F]{6}$/.test(host.agentColor || "") ? host.agentColor : "#0092a2";
         host.doorSlug = String(host.doorSlug || "").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 32);
+        host.agentLine = String(host.agentLine || "").slice(0, 20);
         return host;
     }
 
@@ -124,6 +126,10 @@
 
     function doorLine(host) {
         return host.doorSlug ? " · Live" : "";
+    }
+
+    function callHook() {
+        return location.origin + "/api/host-call";
     }
 
     function publicDoor(slug) {
@@ -308,6 +314,7 @@
             agentMay: String(draft.agentMay || "").slice(0, 400),
             agentMayNot: String(draft.agentMayNot || "").slice(0, 400),
             agentColor: /^#[0-9a-fA-F]{6}$/.test(draft.agentColor || "") ? draft.agentColor : "#0092a2",
+            agentLine: String(draft.agentLine || "").trim().slice(0, 20),
             pieces: (draft.pieces || []).slice(0, 8).map(function (piece) {
                 return {
                     id: piece.id || pieceId(),
@@ -735,6 +742,13 @@
                 `}
                 <label class="hx-label" for="hx-agent-key">API key</label>
                 <input id="hx-agent-key" class="hx-field" data-field="agentKey" type="password" value="${esc(keyDraft)}" maxlength="200" placeholder="${door && door.keySet ? "Saved" : ""}" autocomplete="off" spellcheck="false">
+                <label class="hx-label" for="hx-line">Phone</label>
+                <input id="hx-line" class="hx-field" data-field="agentLine" type="tel" value="${esc(draft.agentLine || "")}" maxlength="20" placeholder="+1 718 555 0134" autocomplete="off">
+                <label class="hx-label" for="hx-twilio">Twilio token</label>
+                <input id="hx-twilio" class="hx-field" data-field="twilioToken" type="password" value="${esc(twilioDraft)}" maxlength="200" placeholder="${door && door.twilioSet ? "Saved" : ""}" autocomplete="off" spellcheck="false">
+                <label class="hx-label" for="hx-call">Webhook</label>
+                <p id="hx-call" class="hx-door-url">${esc(callHook())}</p>
+                <button type="button" class="hx-ghost" data-action="copy-call">Copy webhook</button>
                 <label class="hx-label" for="hx-welcome">Welcome</label>
                 <input id="hx-welcome" class="hx-field" data-field="agentWelcome" value="${esc(draft.agentWelcome || "")}" maxlength="280" placeholder="Ask us anything" autocomplete="off">
                 <label class="hx-label" for="hx-may">Allowed</label>
@@ -913,6 +927,7 @@
         ticket = [];
         notice = "";
         keyDraft = "";
+        twilioDraft = "";
         logoDraft = "";
         door = null;
         render();
@@ -936,6 +951,10 @@
         }
         if (field === "agentKey") {
             keyDraft = el.value;
+            return;
+        }
+        if (field === "twilioToken") {
+            twilioDraft = el.value;
             return;
         }
         draft.dirty = true;
@@ -1136,6 +1155,10 @@
         }
         if (action === "copy-embed" && door && door.slug) {
             copyValue(embedDoor(door.slug, draft && draft.name), "Embed copied.");
+            return;
+        }
+        if (action === "copy-call") {
+            copyValue(callHook(), "Webhook copied.");
         }
     }
 
@@ -1201,6 +1224,9 @@
             if (data && data.provider) {
                 draft.agentProvider = data.provider === "custom" ? "custom" : "openai";
             }
+            if (data && data.line) {
+                draft.agentLine = data.line;
+            }
             render();
         }).catch(function () {});
     }
@@ -1216,6 +1242,8 @@
             model: draft.agentModel || "gpt-4o-mini",
             endpoint: draft.agentEndpoint || "",
             apiKey: keyDraft,
+            twilioToken: twilioDraft,
+            line: draft.agentLine || "",
             welcome: draft.agentWelcome || "",
             may: draft.agentMay || "",
             mayNot: draft.agentMayNot || "",
@@ -1243,7 +1271,11 @@
         if (data && data.endpoint) {
             draft.agentEndpoint = data.endpoint;
         }
+        if (data && data.line) {
+            draft.agentLine = data.line;
+        }
         keyDraft = "";
+        twilioDraft = "";
         const fields = {
             doorSlug: draft.doorSlug || "",
             agentProvider: draft.agentProvider,
@@ -1252,7 +1284,8 @@
             agentWelcome: draft.agentWelcome || "",
             agentMay: draft.agentMay || "",
             agentMayNot: draft.agentMayNot || "",
-            agentColor: draft.agentColor || "#0092a2"
+            agentColor: draft.agentColor || "#0092a2",
+            agentLine: draft.agentLine || ""
         };
         const known = hosts.some(function (host) {
             return String(host.share || "").toUpperCase() === String(draft.share || "").toUpperCase();
